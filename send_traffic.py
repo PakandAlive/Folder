@@ -6,6 +6,9 @@ import json
 import urllib.request
 import urllib.parse
 
+# 获取vps的运行时间/流量情况，并发送给TG
+
+
 # 在脚本开头添加这个常量
 SERVER_NAME = "AZ-华盛顿"
 

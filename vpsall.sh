@@ -49,7 +49,7 @@ execute_option() {
             ;;
         3)
             echo "正在安装 3to1..."
-            bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/3to1.sh)
+            bash <(curl -fsSL -u PakandAlive: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 https://raw.githubusercontent.com/PakandAlive/Folder/main/3to1.sh)
             ;;
         4)
             echo "正在安装 Alpine Hysteria2..."

@@ -49,7 +49,7 @@ execute_option() {
             ;;
         3)
             echo "正在安装 3to1..."
-            bash <(curl -fsSL https://github.com/nowhash6120/sing-box-reality-hysteria2/raw/main/3to1.sh)
+            bash <(curl -fsSL https://github.com/nowhash6120/Folder/raw/main/3to1.sh)
             ;;
         4)
             echo "正在安装 Alpine Hysteria2..."

@@ -1,0 +1,23 @@
+
+#!name=FIMO2LOON
+#!desc=FIMO
+#!icon=https://raw.githubusercontent.com/deezertidal/private/main/icons/fimo.png
+
+
+[Script]
+
+
+# FIMO
+http-response ^https?:\/\/server\.zbisq\.com\/fimo-user\/user script-path=https://raw.githubusercontent.com/PakandAlive/sing-box-reality-hysteria2/main/FIMO.js, requires-body=true, tag=FIMO
+
+
+
+
+
+
+
+
+
+[MITM]
+
+hostname = server.zbisq.com

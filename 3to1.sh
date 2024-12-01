@@ -1526,7 +1526,7 @@ disable_hy2hopping(){
 }
 
 # 作者介绍
-print_with_delay "Reality Hysteria2 VmessArgo 三合一脚本 by 绵阿羊" 0.03
+print_with_delay "PakandAlive" 0.03
 echo ""
 echo ""
 #install pkgs

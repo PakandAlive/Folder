@@ -95,6 +95,21 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Weibo_remove_ad
 ```
 </details>
 
+<details>
+<summary> NeteaseCloudMusic ads Ads</summary>
+
+
+```sh
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/NeteaseCloudMusic_remove_ads.plugin
+
+```
+</details>
+
+
+
+
+
+
 <br>
 
 ## LOON 规则

@@ -8,12 +8,14 @@ NC='\033[0m' # No Color
 # 显示 LOGO
 show_logo() {
     echo -e "\033[30m"
-    echo "   ╱|、  ?"
-    echo "  (˚ˎ 。7     ??"
-    echo "   |、˜〵      ✧"
-    echo "   じしˍ,)ノ"
+    echo "                   へ   ??"
+    echo "              ૮  >  <)      "
+    echo "               /  ⁻  ៸|       "
+    echo "          乀(ˍ, ل ل   "
     echo -e "${NC}"
 }
+
+
 
 # 显示菜单
 show_menu() {

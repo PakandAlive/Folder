@@ -9,8 +9,8 @@ NC='\033[0m' # No Color
 show_logo() {
     echo -e "\033[30m"
     echo "   ╱|、  ?"
-    echo "  (˚ˎ。7"
-    echo "   |、˜〵"
+    echo "  (˚ˎ 。7     ??"
+    echo "   |、˜〵      ✧"
     echo "   じしˍ,)ノ"
     echo -e "${NC}"
 }

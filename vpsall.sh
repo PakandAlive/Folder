@@ -8,9 +8,9 @@ NC='\033[0m' # No Color
 # 显示 LOGO
 show_logo() {
     echo -e "\033[30m"
-    echo "                              ╱|、"
-    echo "                          (\`   -  7"
-    echo "                           |、⁻〵"
+    echo "                           ╱|、  ?"
+    echo "                          (˚ˎ 。7"
+    echo "                          |、˜〵"
     echo "                          じしˍ,)ノ"
     echo -e "${NC}"
 }
@@ -85,7 +85,7 @@ execute_option() {
     esac
 }
 
-# 主程序���环
+# 主程序环
 while true; do
     show_menu
     read -p "请选择要安装的程序 (0-9): " choice

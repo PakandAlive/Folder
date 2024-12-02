@@ -32,7 +32,7 @@ https://whatshub.top/plugin/DisableUpdate.plugin
 <summary>Spotify Premium</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Spotify.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Spotify.plugin
 ```
 
 </details>
@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/Spotify.plugin
 <summary> Fimo PRO</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/FIMO2LOON.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/FIMO2LOON.plugin
 ```
 
 
@@ -52,7 +52,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/FIMO2LOON.plugin
 
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Bilibili_remove_ads.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Bilibili_remove_ads.plugin
 
 ```
 
@@ -64,7 +64,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/Bilibili_remove_ads.pl
 
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/YouTube_remove_ads.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/YouTube_remove_ads.plugin
 
 ```
 
@@ -76,7 +76,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/YouTube_remove_ads.plu
 
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/RedPaper_remove_ads.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/RedPaper_remove_ads.plugin
 
 ```
 
@@ -89,7 +89,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/RedPaper_remove_ads.pl
 
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Weibo_remove_ads.plugin
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Weibo_remove_ads.plugin
 
 
 ```
@@ -112,7 +112,7 @@ https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/
 <summary> Talkalone Ads</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/TalkaloneREJECT.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/TalkaloneREJECT.list
 ```
 
 </details>
@@ -122,7 +122,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/TalkaloneREJECT.list
 <summary> Talkalone</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Talkalone.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Talkalone.list
 ```
 
 </details>
@@ -158,7 +158,7 @@ https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/
 <summary> YouTube-Telegram</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/YouTube-TG.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/YouTube-TG.list
 ```
 
 </details>
@@ -167,7 +167,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/YouTube-TG.list
 <summary> Netflix</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Netflix.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Netflix.list
 ```
 
 </details>
@@ -176,7 +176,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/Netflix.list
 <summary> Twitter</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Twitter.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Twitter.list
 ```
 
 </details>
@@ -186,7 +186,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/Twitter.list
 <summary> OpenAI-Claude</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/OpenAI-Claude.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/OpenAI-Claude.list
 ```
 
 </details>
@@ -195,7 +195,7 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/OpenAI-Claude.list
 <summary> Weibo-Rednote</summary>
 
 ```sh
-https://raw.githubusercontent.com/PakandAlive/Folder/main/Weibo-Rednote.list
+https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Weibo-Rednote.list
 ```
 
 </details>

@@ -32,7 +32,7 @@ show_menu() {
     echo "7. 安装 TM"
     echo "8. 安装 优选 IP"
     echo "9. 安装 哪吒探针"
-    echo "10. 检测 IP 质量"
+    echo "10. 流媒体检测"
     echo "0. 退出"
     echo "------------------------"
 }
@@ -80,7 +80,7 @@ execute_option() {
             ;;
         
          10)
-            echo "正在检测 IP..."
+            echo "正在检测流媒体..."
              bash <(curl -sL IP.Check.Place)
             ;;
 

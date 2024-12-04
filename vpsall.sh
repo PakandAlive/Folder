@@ -32,6 +32,7 @@ show_menu() {
     echo "7. 安装 TM"
     echo "8. 安装 优选 IP"
     echo "9. 安装 哪吒探针"
+    echo "10. 检测 IP 质量"
     echo "0. 退出"
     echo "------------------------"
 }
@@ -77,6 +78,13 @@ execute_option() {
             echo "正在安装哪吒探针..."
             curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=qoGtKhKCn0UKA58MvaHnWgHL18KyPVP7 ./nezha.sh
             ;;
+        
+         10)
+            echo "正在检测 IP..."
+             bash <(curl -sL IP.Check.Place)
+            ;;
+
+        
         0)
             echo "退出程序..."
             exit 0
@@ -90,7 +98,7 @@ execute_option() {
 # 主程序循环
 while true; do
     show_menu
-    read -p "请选择要安装的程序 (0-9): " choice
+    read -p "请选择要安装的程序 (0-10): " choice
     if [ "$choice" -eq 0 ]; then
         break
     fi

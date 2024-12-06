@@ -76,7 +76,7 @@ execute_option() {
             ;;
         9)
             echo "正在安装哪吒探针..."
-            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o nezha.sh && chmod +x nezha.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=qoGtKhKCn0UKA58MvaHnWgHL18KyPVP7 ./nezha.sh
+            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh && chmod +x agent.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=VFkcZTRL02S3cd8OEGNy32IuVXVA4459 ./agent.sh
             ;;
         
          10)

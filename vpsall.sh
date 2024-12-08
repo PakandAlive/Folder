@@ -87,7 +87,7 @@ execute_option() {
 
          11)
             echo "DockerNotionNext..."
-             docker run -d -p 6006:3000 --name notion_next -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 ziuch/notion_next
+             docker run -d -p 6006:3000 --name notion_next -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 jishubia/notion_next
             ;;
         
         0)

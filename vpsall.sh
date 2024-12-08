@@ -33,6 +33,7 @@ show_menu() {
     echo "8. 安装 优选 IP"
     echo "9. 安装 哪吒探针"
     echo "10. 流媒体检测"
+    echo "11. DockerNotionNext"
     echo "0. 退出"
     echo "------------------------"
 }
@@ -84,6 +85,10 @@ execute_option() {
              bash <(curl -sL IP.Check.Place)
             ;;
 
+         11)
+            echo "DockerNotionNext..."
+             docker run -d -p 6006:3000 --name notion_next -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 ziuch/notion_next
+            ;;
         
         0)
             echo "退出程序..."
@@ -98,7 +103,7 @@ execute_option() {
 # 主程序循环
 while true; do
     show_menu
-    read -p "请选择要安装的程序 (0-10): " choice
+    read -p "请选择要安装的程序 (0-11): " choice
     if [ "$choice" -eq 0 ]; then
         break
     fi

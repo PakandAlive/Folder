@@ -33,7 +33,7 @@ show_menu() {
     echo "8. 安装 优选 IP"
     echo "9. 安装 哪吒探针"
     echo "10. 流媒体检测"
-    echo "11. DockerNotionNext"
+    echo "11. DockerPakNotion"
     echo "0. 退出"
     echo "------------------------"
 }
@@ -86,8 +86,8 @@ execute_option() {
             ;;
 
          11)
-            echo "DockerNotionNext..."
-             docker run -d -p 6006:3000 --name notion_next -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 jishubia/notion_next
+            echo "DockerPakNotio..."
+             docker run -d -p 6006:3000 --name paknotion -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 jishubia/paknotion
             ;;
         
         0)

@@ -43,8 +43,7 @@ execute_option() {
     case $1 in
         1)
             echo "正在安装 Docker..."
-            sudo apt update
-            sudo apt install docker.io
+            curl -fsSL https://get.docker.com | bash -s docker
             ;;
         2)
             echo "正在安装 1Panel..."

@@ -12,42 +12,73 @@ show_logo() {
     echo "██╔══██╗██╔══██╗██║ ██╔╝██╔══██╗████╗  ██║██╔══██╗██╔══██╗██║     ██║██║   ██║██╔════╝"
     echo "██████╔╝███████║█████╔╝ ███████║██╔██╗ ██║██║  ██║███████║██║     ██║██║   ██║█████╗  "
     echo "██╔═══╝ ██╔══██║██╔═██╗ ██╔══██║██║╚██╗██║██║  ██║██╔══██║██║     ██║╚██╗ ██╔╝██╔══╝  "
-    echo "██║     ██║  ██║██║  ██╗██║  ██║██║ ╚████║██████╔╝██║  ██║███████╗██║ ╚████╔╝ ███████╗"
+    echo "██║     ██║  ��█║██║  ██╗██║  ██║██║ ╚████║██████╔╝██║  ██║███████╗██║ ╚████╔╝ ███████╗"
     echo "╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝  ╚══════╝"
     echo -e "${NC}"
 }
 
-# 显示菜单
-show_menu() {
+# 显示主菜单
+show_main_menu() {
     clear
     show_logo
-    echo -e "${GREEN}=== 服务器配置菜单 ===${NC}"
+    echo -e "${GREEN}=== 主菜单 ===${NC}"
     echo ""
-    echo -e "${BLUE}1. 程序安装${NC}"
-    echo "   1) 安装 Docker"
-    echo "   2) 安装 1Panel"
-    echo "   3) 安装 TM"
-    echo "   4) DockerPakNotion"
-    echo ""
-    echo -e "${BLUE}2. 代理协议${NC}"
-    echo "   5) 安装 3to1"
-    echo "   6) 安装 Alpine Hysteria2"
-    echo "   7) 安装 Serv00 Hysteria2"
-    echo "   8) 安装 X-UI"
-    echo ""
-    echo -e "${BLUE}3. 探针与检测${NC}"
-    echo "   9) 安装优选 IP"
-    echo "   10) 安装哪吒探针"
-    echo "   11) 清理 Nezha"
-    echo "   12) Serv00 后台运行"
-    echo "   13) 流媒体检测"
+    echo "1. 程序安装"
+    echo "2. 代理协议"
+    echo "3. 探针与检测"
     echo ""
     echo "0. 退出"
     echo "------------------------"
 }
 
-# 执行选择的操作
-execute_option() {
+# 显示基础程序安装子菜单
+show_basic_menu() {
+    clear
+    show_logo
+    echo -e "${GREEN}=== 基础程序安装 ===${NC}"
+    echo ""
+    echo "1) 安装 Docker"
+    echo "2) 安装 1Panel"
+    echo "3) 安装 TM"
+    echo "4) DockerPakNotion"
+    echo ""
+    echo "0) 返回主菜单"
+    echo "------------------------"
+}
+
+# 显示代理协议安装子菜单
+show_proxy_menu() {
+    clear
+    show_logo
+    echo -e "${GREEN}=== 代理协议安装 ===${NC}"
+    echo ""
+    echo "1) 安装 3to1"
+    echo "2) 安装 Alpine Hysteria2"
+    echo "3) 安装 Serv00 Hysteria2"
+    echo "4) 安装 X-UI"
+    echo ""
+    echo "0) 返回主菜单"
+    echo "------------------------"
+}
+
+# 显示探针与检测子菜单
+show_monitor_menu() {
+    clear
+    show_logo
+    echo -e "${GREEN}=== 探针与检测 ===${NC}"
+    echo ""
+    echo "1) 安装优选 IP"
+    echo "2) 安装哪吒探针"
+    echo "3) 清理 Nezha"
+    echo "4) Serv00 后台运行"
+    echo "5) 流媒体检测"
+    echo ""
+    echo "0) 返回主菜单"
+    echo "------------------------"
+}
+
+# 执行基础程序安装
+execute_basic() {
     case $1 in
         1)
             echo "正在安装 Docker..."
@@ -66,86 +97,124 @@ execute_option() {
             echo "DockerPakNotio..."
             docker run -d -p 6006:3000 --name paknotion -e NOTION_PAGE_ID=156d008edc738093bb74ceb9bc51a116 jishubia/paknotion
             ;;
-        5)
+    esac
+}
+
+# 执行代理协议安装
+execute_proxy() {
+    case $1 in
+        1)
             echo "正在安装 3to1..."
             bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/3to1.sh)
             ;;
-        6)
+        2)
             echo "正在安装 Alpine Hysteria2..."
             wget -O hy2.sh https://raw.githubusercontent.com/zrlhk/alpine-hysteria2/main/hy2.sh && sh hy2.sh
             ;;
-        7)
+        3)
             echo "正在安装 Sver00 Hysteria2..."
             bash <(curl -Ls https://raw.githubusercontent.com/eooce/sing-box/main/sb_serv00.sh)
             ;;
-        8)
+        4)
             echo "正在安装 X-UI..."
             bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
-            ;;
-        9)
-            echo "正在安装优选 IP..."
-            curl -L -O jhb.ovh/jb/sy.sh
-            bash sy.sh
-            ;;
-        10)
-            echo "正在安装哪吒探针..."
-            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh && chmod +x agent.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=VFkcZTRL02S3cd8OEGNy32IuVXVA4459 ./agent.sh
-            ;;
-        11)
-            echo "正在清理 Nezha..."
-            # 停止所有 Nezha 相关进程
-            pkill -9 -f nezha-agent
-            pkill -9 -f nezha-dashboard
-            pkill -9 -f app
-            
-            # 停止并禁用系统服务
-            systemctl stop nezha-agent 2>/dev/null
-            systemctl disable nezha-agent 2>/dev/null
-            systemctl stop nezha-dashboard 2>/dev/null
-            systemctl disable nezha-dashboard 2>/dev/null
-            
-            # 删除服务文件
-            rm -f /etc/systemd/system/nezha-agent.service
-            rm -f /etc/systemd/system/nezha-dashboard.service
-            systemctl daemon-reload
-            
-            # 删除所有 Nezha 相关文件和目录
-            rm -rf /opt/nezha
-            rm -rf /etc/nezha
-            
-            # 清理临时文件
-            rm -f ~/nezha.sh
-            rm -f ~/agent.sh
-            rm -f /tmp/nezha-agent_linux_*.zip
-            
-            echo "Nezha 清理完成！"
-            ;;
-        12)
-            echo "正在配置 Serv00 后台运行..."
-            nohup ./nezha-agent -c config.yml > nezha-agent.log 2>&1 &
-            echo "Serv00 已在后台启动"
-            ;;
-        13)
-            echo "正在检测流媒体..."
-            bash <(curl -sL IP.Check.Place)
-            ;;
-        0)
-            echo "退出程序..."
-            exit 0
-            ;;
-        *)
-            echo "无效选项，请重新选择"
             ;;
     esac
 }
 
+# 执行探针与检测
+execute_monitor() {
+    case $1 in
+        1)
+            echo "正在安装优选 IP..."
+            curl -L -O jhb.ovh/jb/sy.sh
+            bash sy.sh
+            ;;
+        2)
+            echo "正在安装哪吒探针..."
+            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh && chmod +x agent.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=VFkcZTRL02S3cd8OEGNy32IuVXVA4459 ./agent.sh
+            ;;
+        3)
+            echo "正在清理 Nezha..."
+            pkill -9 -f nezha-agent
+            pkill -9 -f nezha-dashboard
+            pkill -9 -f app
+            systemctl stop nezha-agent 2>/dev/null
+            systemctl disable nezha-agent 2>/dev/null
+            systemctl stop nezha-dashboard 2>/dev/null
+            systemctl disable nezha-dashboard 2>/dev/null
+            rm -f /etc/systemd/system/nezha-agent.service
+            rm -f /etc/systemd/system/nezha-dashboard.service
+            systemctl daemon-reload
+            rm -rf /opt/nezha
+            rm -rf /etc/nezha
+            rm -f ~/nezha.sh
+            rm -f ~/agent.sh
+            rm -f /tmp/nezha-agent_linux_*.zip
+            echo "Nezha 清理完成！"
+            ;;
+        4)
+            echo "正在配置 Serv00 后台运行..."
+            nohup ./nezha-agent -c config.yml > nezha-agent.log 2>&1 &
+            echo "Serv00 已在后台启动"
+            ;;
+        5)
+            echo "正在检测流媒体..."
+            bash <(curl -sL IP.Check.Place)
+            ;;
+    esac
+}
+
+# 处理子菜单
+handle_submenu() {
+    local menu_type=$1
+    local choice
+    while true; do
+        case $menu_type in
+            1)
+                show_basic_menu
+                read -p "请选择操作 (0-4): " choice
+                if [ "$choice" = "0" ]; then
+                    break
+                fi
+                execute_basic $choice
+                ;;
+            2)
+                show_proxy_menu
+                read -p "请选择操作 (0-4): " choice
+                if [ "$choice" = "0" ]; then
+                    break
+                fi
+                execute_proxy $choice
+                ;;
+            3)
+                show_monitor_menu
+                read -p "请选择操作 (0-5): " choice
+                if [ "$choice" = "0" ]; then
+                    break
+                fi
+                execute_monitor $choice
+                ;;
+        esac
+        read -p "按回车键继续..."
+    done
+}
+
 # 主程序循环
 while true; do
-    show_menu
-    read -p "请选择要安装的程序 (0-13): " choice
-    if [ "$choice" -eq 0 ]; then
-        break
-    fi
-    execute_option $choice
-    read -p "按回车键继续..."
+    show_main_menu
+    read -p "请选择主菜单选项 (0-3): " main_choice
+    case $main_choice in
+        0)
+            echo "退出程序..."
+            exit 0
+            ;;
+        1|2|3)
+            handle_submenu $main_choice
+            ;;
+        *)
+            echo "无效选项，请重新选择"
+            read -p "按回车键继续..."
+            ;;
+    esac
 done

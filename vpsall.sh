@@ -72,6 +72,7 @@ show_monitor_menu() {
     echo "3) 清理 Nezha"
     echo "4) Serv00 后台运行"
     echo "5) 流媒体检测"
+    echo "6) Docker 容器监测"
     echo ""
     echo "0) 返回主菜单"
     echo "------------------------"
@@ -162,6 +163,16 @@ execute_monitor() {
             echo "正在检测流媒体..."
             bash <(curl -sL IP.Check.Place)
             ;;
+        6)
+            echo "正在启动 Docker 容器监测..."
+            docker pull jishubia/docker-monitor:latest && \
+            docker run -d \
+              --name docker-monitor \
+              --restart always \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -e TZ=Asia/Shanghai \
+              jishubia/docker-monitor:latest
+            ;;
     esac
 }
 
@@ -189,7 +200,7 @@ handle_submenu() {
                 ;;
             3)
                 show_monitor_menu
-                read -p "请选择操作 (0-5): " choice
+                read -p "请选择操作 (0-6): " choice
                 if [ "$choice" = "0" ]; then
                     break
                 fi

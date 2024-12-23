@@ -223,3 +223,12 @@ https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/
 ```
 
 </details>
+
+<details>
+<summary> Netflix 检测 </summary>
+
+```sh
+https://raw.githubusercontent.com/PakandAlive/Folder/main/netmedia.sgmodule
+```
+
+</details>

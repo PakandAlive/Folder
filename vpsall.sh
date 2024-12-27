@@ -83,7 +83,11 @@ execute_basic() {
     case $1 in
         1)
             echo "正在安装 Docker..."
-            curl -fsSL https://get.docker.com | bash -s docker
+            curl -fsSL https://get.docker.com -o get-docker.sh && \
+            sudo sh get-docker.sh && \
+            sudo usermod -aG docker $USER && \
+            sudo systemctl start docker && \
+            sudo systemctl enable docker
             ;;
         2)
             echo "正在安装 1Panel..."

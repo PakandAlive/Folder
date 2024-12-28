@@ -21,13 +21,14 @@ show_logo() {
 show_main_menu() {
     clear
     show_logo
-    echo -e "${GREEN}=== 主菜单 ===${NC}"
+    echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
-    echo "1. 程序安装"
-    echo "2. 代理协议"
-    echo "3. 探针与检测"
+    printf "%-20s %-20s %-20s %-20s\n" "1)安装Docker" "2)安装1Panel" "3)安装TM" "4)DockerPakNotion"
+    printf "%-20s %-20s %-20s %-20s\n" "5)安装3to1" "6)Alpine Hy2" "7)Serv00 Hy2" "8)安装X-UI"
+    printf "%-20s %-20s %-20s %-20s\n" "9)优选IP" "10)哪吒探针" "11)清理Nezha" "12)Serv00后台"
+    printf "%-20s %-20s\n" "13)流媒体检测" "14)Docker监测"
     echo ""
-    echo "0. 退出"
+    echo "0) 退出"
     echo "------------------------"
 }
 
@@ -218,18 +219,30 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择主菜单选项 (0-3): " main_choice
-    case $main_choice in
+    read -p "请选择操作 (0-14): " choice
+    case $choice in
         0)
             echo "退出程序..."
             exit 0
             ;;
-        1|2|3)
-            handle_submenu $main_choice
-            ;;
+        1) execute_basic 1 ;;
+        2) execute_basic 2 ;;
+        3) execute_basic 3 ;;
+        4) execute_basic 4 ;;
+        5) execute_proxy 1 ;;
+        6) execute_proxy 2 ;;
+        7) execute_proxy 3 ;;
+        8) execute_proxy 4 ;;
+        9) execute_monitor 1 ;;
+        10) execute_monitor 2 ;;
+        11) execute_monitor 3 ;;
+        12) execute_monitor 4 ;;
+        13) execute_monitor 5 ;;
+        14) execute_monitor 6 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."
             ;;
     esac
+    [ $choice != 0 ] && read -p "按回车键继续..."
 done

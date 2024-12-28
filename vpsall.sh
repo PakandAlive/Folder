@@ -23,12 +23,12 @@ show_main_menu() {
     show_logo
     echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
-    printf "%-25s %-25s %-25s %-25s\n" "1)安装Docker" "5)安装3to1" "9)优选IP" "13)流媒体检测"
-    printf "%-25s %-25s %-25s %-25s\n" "2)安装1Panel" "6)Alpine Hy2" "10)哪吒探针" "14)Docker监测"
-    printf "%-25s %-25s %-25s\n" "3)安装TM" "7)Serv00 Hy2" "11)清理Nezha"
-    printf "%-25s %-25s %-25s\n" "4)DockerPakNotion" "8)安装X-UI" "12)Serv00后台"
+    printf " 1)安装Docker         5)安装3to1           9)优选IP             13)流媒体检测\n"
+    printf " 2)安装1Panel         6)Alpine Hy2        10)哪吒探针           14)Docker监测\n"
+    printf " 3)安装TM             7)Serv00 Hy2        11)清理Nezha\n"
+    printf " 4)DockerPakNotion    8)安装X-UI          12)Serv00后台\n"
     echo ""
-    echo "0) 退出"
+    echo " 0) 退出"
     echo "------------------------"
 }
 

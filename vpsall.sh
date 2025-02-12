@@ -138,7 +138,7 @@ execute_monitor() {
             ;;
         2)
             echo "正在安装哪吒探针..."
-            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh && chmod +x agent.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=VFkcZTRL02S3cd8OEGNy32IuVXVA4459 ./agent.sh
+            curl -L https://raw.githubusercontent.com/nezhahq/scripts/main/agent/install.sh -o agent.sh && chmod +x agent.sh && env NZ_SERVER=mb.tmdd.me:10008 NZ_TLS=false NZ_CLIENT_SECRET=VbLtiXco4MUrDoFTDKO6NAHJlRb3GvLG ./agent.sh
             ;;
         3)
             echo "正在清理 Nezha..."

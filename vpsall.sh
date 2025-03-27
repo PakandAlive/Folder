@@ -7,13 +7,9 @@ NC='\033[0m' # No Color
 
 # 显示 LOGO
 show_logo() {
-    local c1="\033[38;5;27m"
-    local c2="\033[38;5;33m"
-    local c3="\033[38;5;39m"
-    local c4="\033[38;5;45m"
-    local c5="\033[38;5;51m"
+    local GREEN='\033[0;32m'
     
-    echo -e "${c1}/${c2}ᐠ ${c3}- ${c4}˕ ${c3}-${c2}マ ${c1}Ⳋ"
+    echo -e "${GREEN}/ᐠ - ˕ -マ Ⳋ"
     echo -e "${NC}"
 }
 
@@ -23,10 +19,13 @@ show_main_menu() {
     show_logo
     echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
-    printf " 1)安装Docker         5)安装3to1           9)优选IP             13)流媒体检测\n"
-    printf " 2)安装1Panel         6)Alpine Hy2        10)哪吒探针           14)Docker监测\n"
-    printf " 3)安装TM             7)Serv00 Hy2        11)清理Nezha\n"
-    printf " 4)DockerPakNotion    8)安装X-UI          12)Serv00后台\n"
+    printf " 1)安装Docker         2)安装1Panel         3)安装TM\n"
+    printf " 4)DockerPakNotion    5)安装3to1           6)Alpine Hy2\n"
+    printf " 7)Serv00 Hy2         8)安装X-UI           9)优选IP\n"
+    printf "10)哪吒探针          11)清理Nezha         12)Serv00后台\n"
+    printf "13)流媒体检测        14)Docker监测        15)解压工具\n"
+    printf "16)Hummingbot        17)查看Sbox链接      18)PM2状态\n"
+    printf "19)修改系统密码\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -181,6 +180,46 @@ execute_monitor() {
     esac
 }
 
+# 添加新的执行函数
+execute_tools() {
+    case $1 in
+        1)
+            echo "正在安装解压工具..."
+            sudo apt install unzip
+            ;;
+        2)
+            echo "正在连接到 Hummingbot..."
+            docker attach hummingbot
+            ;;
+        3)
+            echo "正在查看 Sbox 链接..."
+            cd sbox
+            journalctl -u sing-box -f | grep -v "ERROR"
+            ;;
+        4)
+            echo "正在查看 PM2 状态..."
+            pm2 status
+            ;;
+        5)
+            echo "正在修改系统密码和 SSH 配置..."
+            # 修改 root 密码
+            echo "root:97TTY36MpwMr9TkL" | chpasswd
+            
+            # 修改 SSH 配置允许 root 登录
+            sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+            sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+            sed -i 's/#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+            sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+            
+            # 重启 SSH 服务
+            systemctl restart sshd
+            
+            echo "密码已修改为: 97TTY36MpwMr9TkL"
+            echo "已启用 root 登录和密码认证"
+            ;;
+    esac
+}
+
 # 处理子菜单
 handle_submenu() {
     local menu_type=$1
@@ -219,7 +258,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-14): " choice
+    read -p "请选择操作 (0-19): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -239,6 +278,11 @@ while true; do
         12) execute_monitor 4 ;;
         13) execute_monitor 5 ;;
         14) execute_monitor 6 ;;
+        15) execute_tools 1 ;;
+        16) execute_tools 2 ;;
+        17) execute_tools 3 ;;
+        18) execute_tools 4 ;;
+        19) execute_tools 5 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

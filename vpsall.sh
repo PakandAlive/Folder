@@ -204,18 +204,36 @@ execute_tools() {
             echo "正在修改系统密码和 SSH 配置..."
             # 修改 root 密码
             echo "root:97TTY36MpwMr9TkL" | chpasswd
+
+            # 备份原始 SSH 配置
+            cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
             
-            # 修改 SSH 配置允许 root 登录
-            sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-            sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-            sed -i 's/#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-            sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-            
+            # 直接写入新的 SSH 配置
+            cat > /etc/ssh/sshd_config << EOF
+Port 22
+AddressFamily inet
+ListenAddress 0.0.0.0
+Protocol 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin yes
+PubkeyAuthentication yes
+PasswordAuthentication yes
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+EOF
+
             # 重启 SSH 服务
             systemctl restart sshd
             
             echo "密码已修改为: 97TTY36MpwMr9TkL"
             echo "已启用 root 登录和密码认证"
+            echo "SSH 配置已更新，请尝试使用 root 账户登录"
             ;;
     esac
 }

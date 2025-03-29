@@ -1,5 +1,12 @@
 # VPS 工具箱 🚀
 
+> ⚠️ **警告 / WARNING**
+> 
+> **本仓库仅供个人使用，严禁 Fork！**
+> 
+> **代码中包含其他开源项目的引用，如果私自使用，后果自负！**
+> 
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/PakandAlive/Folder.svg)](https://github.com/PakandAlive/Folder/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/PakandAlive/Folder.svg)](https://github.com/PakandAlive/Folder/network)

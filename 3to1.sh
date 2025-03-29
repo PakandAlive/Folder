@@ -1006,14 +1006,8 @@ echo ""
 echo ""
 #install pkgs
 install_pkgs
-
-# 修改判断条件，检查所有必要文件是否存在
-if [ -f "/root/sbox/sbconfig_server.json" ] && 
-   [ -f "/root/sbox/config" ] && 
-   [ -f "/root/sbox/sing-box" ] && 
-   [ -f "/etc/systemd/system/sing-box.service" ] && 
-   systemctl is-active sing-box &>/dev/null; then
-    # 已安装且服务正在运行
+# Check if reality.json, sing-box, and sing-box.service already exist
+if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/nowhash.sh" ] && [ -f "/usr/bin/nowhash" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
     warning "sing-box-reality-hysteria2已安装"
     show_status
@@ -1030,7 +1024,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] &&
     info "0. 卸载"
     hint "========================="
     echo ""
-    read -p "请输入对应数字 (0-8): " choice
+    read -p "请输入对应数字 (0-7): " choice
 
     case $choice in
       1)
@@ -1079,241 +1073,239 @@ if [ -f "/root/sbox/sbconfig_server.json" ] &&
           exit 1
           ;;
 	esac
-else
-    # 未安装或服务未运行，执行安装流程
-    echo "开始安装..."
-    mkdir -p "/root/sbox/"
+	fi
 
-    install_singbox
-    download_cloudflared
+mkdir -p "/root/sbox/"
 
-    echo ""
-    echo ""
-    # reality
-    warning "开始配置Reality..."
-    echo ""
-    key_pair=$(/root/sbox/sing-box generate reality-keypair)
-    private_key=$(echo "$key_pair" | awk '/PrivateKey/ {print $2}' | tr -d '"')
-    public_key=$(echo "$key_pair" | awk '/PublicKey/ {print $2}' | tr -d '"')
-    info "生成的公钥为:  $public_key"
-    info "生成的私钥为:  $private_key"
-    reality_uuid=$(/root/sbox/sing-box generate uuid)
-    short_id=$(/root/sbox/sing-box generate rand --hex 8)
-    info "生成的uuid为:  $reality_uuid"
-    info "生成的短id为:  $short_id"
-    echo ""
-    reality_port=$(generate_port)
-    info "生成的端口号为: $reality_port"
-    reality_server_name="itunes.apple.com"
-    while :; do
-        read -p "请输入需要偷取证书的网站，必须支持 TLS 1.3 and HTTP/2 (默认: $reality_server_name): " input_server_name
-        reality_server_name=${input_server_name:-$reality_server_name}
+install_singbox
+download_cloudflared
 
-        if curl --tlsv1.3 --http2 -sI "https://$reality_server_name" | grep -q "HTTP/2"; then
-            break
-        else
-            echo "域名 $reality_server_name 不支持 TLS 1.3 或 HTTP/2，请重新输入."
-        fi
-    done
-    info "域名 $reality_server_name 符合."
-    echo ""
-    echo ""
-    # hysteria2
-    warning "开始配置hysteria2..."
-    echo ""
-    hy_password=$(/root/sbox/sing-box generate rand --hex 8)
-    info "password: $hy_password"
-    echo ""
-    hy_port=$(generate_port)
-    info "生成的端口号为: $hy_port"
-    read -p "输入自签证书域名 (默认为: bing.com): " hy_server_name
-    hy_server_name=${hy_server_name:-bing.com}
-    mkdir -p /root/sbox/self-cert/ && openssl ecparam -genkey -name prime256v1 -out /root/sbox/self-cert/private.key && openssl req -new -x509 -days 36500 -key /root/sbox/self-cert/private.key -out /root/sbox/self-cert/cert.pem -subj "/CN=${hy_server_name}"
-    info "自签证书生成完成,保存于/root/sbox/self-cert/"
-    echo ""
-    echo ""
-    # vmess ws
-    warning "开始配置vmess"
-    echo ""
-    # Generate hysteria necessary values
-    vmess_uuid=$(/root/sbox/sing-box generate uuid)
-    vmess_port=$(generate_port)
-    info "生成的端口号为: $vmess_port"
-    read -p "ws路径 (无需加斜杠,默认随机生成): " ws_path
-    ws_path=${ws_path:-$(/root/sbox/sing-box generate rand --hex 6)}
-    info "生成的path为: $ws_path"
-    #get ip
-    server_ip=$(curl -s4m8 ip.sb -k) || server_ip=$(curl -s6m8 ip.sb -k)
+echo ""
+echo ""
+# reality
+warning "开始配置Reality..."
+echo ""
+key_pair=$(/root/sbox/sing-box generate reality-keypair)
+private_key=$(echo "$key_pair" | awk '/PrivateKey/ {print $2}' | tr -d '"')
+public_key=$(echo "$key_pair" | awk '/PublicKey/ {print $2}' | tr -d '"')
+info "生成的公钥为:  $public_key"
+info "生成的私钥为:  $private_key"
+reality_uuid=$(/root/sbox/sing-box generate uuid)
+short_id=$(/root/sbox/sing-box generate rand --hex 8)
+info "生成的uuid为:  $reality_uuid"
+info "生成的短id为:  $short_id"
+echo ""
+reality_port=$(generate_port)
+info "生成的端口号为: $reality_port"
+reality_server_name="itunes.apple.com"
+while :; do
+    read -p "请输入需要偷取证书的网站，必须支持 TLS 1.3 and HTTP/2 (默认: $reality_server_name): " input_server_name
+    reality_server_name=${input_server_name:-$reality_server_name}
 
-    #generate config
-    cat > /root/sbox/config <<EOF
-    # VPS ip
-    SERVER_IP='$server_ip'
-    # Reality
-    PUBLIC_KEY='$public_key'
-    # Hysteria2
-    HY_SERVER_NAME='$hy_server_name'
-    HY_HOPPING=FALSE
-    # Vmess
-    VMESS_PORT=$vmess_port
-    # Argo
-    ARGO_DOMAIN=''
-    # Warp
-    WARP_ENABLE=FALSE
-    # 1 2 3 4
-    WARP_MODE=1
-    # 0 局部分流 1 全局分流
-    WARP_OPTION=0
-    EOF
+    if curl --tlsv1.3 --http2 -sI "https://$reality_server_name" | grep -q "HTTP/2"; then
+        break
+    else
+        echo "域名 $reality_server_name 不支持 TLS 1.3 或 HTTP/2，请重新输入."
+    fi
+done
+info "域名 $reality_server_name 符合."
+echo ""
+echo ""
+# hysteria2
+warning "开始配置hysteria2..."
+echo ""
+hy_password=$(/root/sbox/sing-box generate rand --hex 8)
+info "password: $hy_password"
+echo ""
+hy_port=$(generate_port)
+info "生成的端口号为: $hy_port"
+read -p "输入自签证书域名 (默认为: bing.com): " hy_server_name
+hy_server_name=${hy_server_name:-bing.com}
+mkdir -p /root/sbox/self-cert/ && openssl ecparam -genkey -name prime256v1 -out /root/sbox/self-cert/private.key && openssl req -new -x509 -days 36500 -key /root/sbox/self-cert/private.key -out /root/sbox/self-cert/cert.pem -subj "/CN=${hy_server_name}"
+info "自签证书生成完成,保存于/root/sbox/self-cert/"
+echo ""
+echo ""
+# vmess ws
+warning "开始配置vmess"
+echo ""
+# Generate hysteria necessary values
+vmess_uuid=$(/root/sbox/sing-box generate uuid)
+vmess_port=$(generate_port)
+info "生成的端口号为: $vmess_port"
+read -p "ws路径 (无需加斜杠,默认随机生成): " ws_path
+ws_path=${ws_path:-$(/root/sbox/sing-box generate rand --hex 6)}
+info "生成的path为: $ws_path"
+#get ip
+server_ip=$(curl -s4m8 ip.sb -k) || server_ip=$(curl -s6m8 ip.sb -k)
 
-    echo "设置argo"
-    cat > /etc/systemd/system/argo.service << EOF
-    [Unit]
-    Description=Cloudflare Tunnel
-    After=network.target
+#generate config
+cat > /root/sbox/config <<EOF
+# VPS ip
+SERVER_IP='$server_ip'
+# Reality
+PUBLIC_KEY='$public_key'
+# Hysteria2
+HY_SERVER_NAME='$hy_server_name'
+HY_HOPPING=FALSE
+# Vmess
+VMESS_PORT=$vmess_port
+# Argo
+ARGO_DOMAIN=''
+# Warp
+WARP_ENABLE=FALSE
+# 1 2 3 4
+WARP_MODE=1
+# 0 局部分流 1 全局分流
+WARP_OPTION=0
+EOF
 
-    [Service]
-    Type=simple
-    NoNewPrivileges=yes
-    TimeoutStartSec=0
-    ExecStart=/bin/bash -c "/root/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol http2>/root/sbox/argo.log 2>&1 "
-    Restart=on-failure
-    RestartSec=5s
+echo "设置argo"
+cat > /etc/systemd/system/argo.service << EOF
+[Unit]
+Description=Cloudflare Tunnel
+After=network.target
 
-    [Install]
-    WantedBy=multi-user.target
+[Service]
+Type=simple
+NoNewPrivileges=yes
+TimeoutStartSec=0
+ExecStart=/bin/bash -c "/root/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol http2>/root/sbox/argo.log 2>&1 "
+Restart=on-failure
+RestartSec=5s
 
-    EOF
+[Install]
+WantedBy=multi-user.target
 
-    systemctl daemon-reload
-    systemctl enable argo
-    systemctl start argo
-    systemctl restart argo
+EOF
 
-    #generate singbox server config
-    cat > /root/sbox/sbconfig_server.json << EOF
+systemctl daemon-reload
+systemctl enable argo
+systemctl start argo
+systemctl restart argo
+
+#generate singbox server config
+cat > /root/sbox/sbconfig_server.json << EOF
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true
+  },
+  "inbounds": [
     {
-      "log": {
-        "disabled": false,
-        "level": "info",
-        "timestamp": true
-      },
-      "inbounds": [
+      "sniff": true,
+      "sniff_override_destination": true,
+      "type": "vless",
+      "tag": "vless-in",
+      "listen": "::",
+      "listen_port": $reality_port,
+      "users": [
         {
-          "sniff": true,
-          "sniff_override_destination": true,
-          "type": "vless",
-          "tag": "vless-in",
-          "listen": "::",
-          "listen_port": $reality_port,
-          "users": [
-            {
-              "uuid": "$reality_uuid",
-              "flow": "xtls-rprx-vision"
-            }
-          ],
-          "tls": {
-            "enabled": true,
-            "server_name": "$reality_server_name",
-            "reality": {
-              "enabled": true,
-              "handshake": {
-                "server": "$reality_server_name",
-                "server_port": 443
-              },
-              "private_key": "$private_key",
-              "short_id": ["$short_id"]
-            }
-          }
-        },
-        {
-            "sniff": true,
-            "sniff_override_destination": true,
-            "type": "hysteria2",
-            "tag": "hy2-in",
-            "listen": "::",
-            "listen_port": $hy_port,
-            "users": [
-                {
-                    "password": "$hy_password"
-                }
-            ],
-            "tls": {
-                "enabled": true,
-                "alpn": [
-                    "h3"
-                ],
-                "certificate_path": "/root/sbox/self-cert/cert.pem",
-                "key_path": "/root/sbox/self-cert/private.key"
-            }
-        },
-        {
-            "sniff": true,
-            "sniff_override_destination": true,
-            "type": "vmess",
-            "tag": "vmess-in",
-            "listen": "::",
-            "listen_port": $vmess_port,
-            "users": [
-                {
-                    "uuid": "$vmess_uuid",
-                    "alterId": 0
-                }
-            ],
-            "transport": {
-                "type": "ws",
-                "path": "$ws_path",
-                "max_early_data":2048,
-                "early_data_header_name":"Sec-WebSocket-Protocol"
-            }
+          "uuid": "$reality_uuid",
+          "flow": "xtls-rprx-vision"
         }
       ],
-        "outbounds": [
+      "tls": {
+        "enabled": true,
+        "server_name": "$reality_server_name",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "$reality_server_name",
+            "server_port": 443
+          },
+          "private_key": "$private_key",
+          "short_id": ["$short_id"]
+        }
+      }
+    },
+    {
+        "sniff": true,
+        "sniff_override_destination": true,
+        "type": "hysteria2",
+        "tag": "hy2-in",
+        "listen": "::",
+        "listen_port": $hy_port,
+        "users": [
             {
-                "type": "direct",
-                "tag": "direct"
-            },
-            {
-                "type": "block",
-                "tag": "block"
+                "password": "$hy_password"
             }
-        ]
+        ],
+        "tls": {
+            "enabled": true,
+            "alpn": [
+                "h3"
+            ],
+            "certificate_path": "/root/sbox/self-cert/cert.pem",
+            "key_path": "/root/sbox/self-cert/private.key"
+        }
+    },
+    {
+        "sniff": true,
+        "sniff_override_destination": true,
+        "type": "vmess",
+        "tag": "vmess-in",
+        "listen": "::",
+        "listen_port": $vmess_port,
+        "users": [
+            {
+                "uuid": "$vmess_uuid",
+                "alterId": 0
+            }
+        ],
+        "transport": {
+            "type": "ws",
+            "path": "$ws_path",
+            "max_early_data":2048,
+            "early_data_header_name":"Sec-WebSocket-Protocol"
+        }
     }
-    EOF
-    # Create sing-box.service
-    cat > /etc/systemd/system/sing-box.service <<EOF
-    [Unit]
-    After=network.target nss-lookup.target
+  ],
+    "outbounds": [
+        {
+            "type": "direct",
+            "tag": "direct"
+        },
+        {
+            "type": "block",
+            "tag": "block"
+        }
+    ]
+}
+EOF
+# Create sing-box.service
+cat > /etc/systemd/system/sing-box.service <<EOF
+[Unit]
+After=network.target nss-lookup.target
 
-    [Service]
-    User=root
-    WorkingDirectory=/root/sbox
-    CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
-    AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
-    ExecStart=/root/sbox/sing-box run -c /root/sbox/sbconfig_server.json
-    ExecReload=/bin/kill -HUP \$MAINPID
-    Restart=on-failure
-    RestartSec=10
-    LimitNOFILE=infinity
+[Service]
+User=root
+WorkingDirectory=/root/sbox
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+ExecStart=/root/sbox/sing-box run -c /root/sbox/sbconfig_server.json
+ExecReload=/bin/kill -HUP \$MAINPID
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=infinity
 
-    [Install]
-    WantedBy=multi-user.target
-    EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
 
-    # Check configuration and start the service
-    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
-        hint "check config profile..."
-        systemctl daemon-reload
-        systemctl enable sing-box > /dev/null 2>&1
-        systemctl start sing-box
-        systemctl restart sing-box
-        install_shortcut
-        show_client_configuration
-        hint "输入nowhash,打开菜单"
-    else
-        error "check sing-box server config profile error!"
-    fi
+# Check configuration and start the service
+if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+    hint "check config profile..."
+    systemctl daemon-reload
+    systemctl enable sing-box > /dev/null 2>&1
+    systemctl start sing-box
+    systemctl restart sing-box
+    install_shortcut
+    show_client_configuration
+    hint "输入nowhash,打开菜单"
+else
+    error "check sing-box server config profile error!"
 fi
 
 # 确保脚本最后有这些内容

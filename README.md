@@ -1,13 +1,15 @@
-<h1 align="center" style="color: #FF0000; background-color: #FFE7E7; padding: 20px; border: 2px solid #FF0000;">
-⚠️ 警告 / WARNING ⚠️
+<div align="center">
 
-本仓库仅供个人使用，严禁 Fork ！
+# ⚠️ 警告 / WARNING ⚠️
 
-代码中包含其他开源项目的引用
-如果私自使用，有隐藏风险，后果自负！
+<p style="background-color: #FFE7E7; padding: 20px; border: 2px solid #FF0000;">
 
+**本仓库仅供个人使用，严禁 Fork ！**
 
-</h2>
+### 代码中包含其他开源项目的引用如果私自使用，有隐藏风险，后果自负！
+
+</p>
+</div>
 
 # VPS 工具箱 🚀
 

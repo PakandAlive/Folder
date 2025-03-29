@@ -1315,3 +1315,12 @@ else
         error "check sing-box server config profile error!"
     fi
 fi
+
+# 确保脚本最后有这些内容
+if [ $# -eq 0 ]; then
+    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+else
+    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh) "$@"
+fi
+
+# 确保文件末尾有一个空行

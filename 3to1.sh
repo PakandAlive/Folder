@@ -113,7 +113,11 @@ install_pkgs() {
 install_shortcut() {
   cat > /root/sbox/nowhash.sh << 'EOF'
 #!/usr/bin/env bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh) $1
+if [ -f "/root/sbox/config" ]; then
+    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh) menu
+else
+    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+fi
 EOF
   chmod +x /root/sbox/nowhash.sh
   ln -sf /root/sbox/nowhash.sh /usr/bin/nowhash

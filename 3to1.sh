@@ -256,20 +256,10 @@ show_client_configuration() {
   reality_server_name=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .tls.server_name' /root/sbox/sbconfig_server.json)
   short_id=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .tls.reality.short_id[0]' /root/sbox/sbconfig_server.json)
 
-  #聚合reality
-  reality_link="vless://$reality_uuid@$server_ip:$reality_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reality_server_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#SING-BOX-REALITY"
   echo ""
-  show_notice "Vision Reality通用链接 二维码 通用参数" 
+  show_notice "Reality 配置参数" 
   echo ""
-  info "通用链接如下"
-  echo "" 
-  echo "$reality_link"
-  echo ""
-  info "二维码如下"
-  echo ""
-  qrencode -t UTF8 $reality_link
-  echo ""
-  info "客户端通用参数如下"
+  info "Reality 通用参数如下"
   echo ""
   echo "服务器ip: $server_ip"
   echo "监听端口: $reality_port"
@@ -284,40 +274,23 @@ show_client_configuration() {
   hy_server_name=$(grep -o "HY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   hy_password=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .users[0].password' /root/sbox/sbconfig_server.json)
   
-  # Generate the hy link
+  # Check hopping status
   ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
-  if [ "$ishopping" = "FALSE" ]; then
-    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name"
-  else
-    iptables_rule=$(iptables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
-    ipv6tables_rule=$(ip6tables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
-    if [ -z "$iptables_rule" ] && [ -z "$ipv6tables_rule" ]; then
-        echo "未找到端口范围。"
-        exit 1
-    fi
-    output_range="${iptables_rule:-$ipv6tables_rule}"
-    formatted_range=$(echo "$output_range" | sed 's/:/-/')
-    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name&mport=${hy_port},${formatted_range}"
-  fi
   
   echo ""
-  show_notice "Hysteria2通用链接 二维码 通用参数" 
+  show_notice "Hysteria2 配置参数" 
   echo ""
-  info "通用链接如下"
-  echo "" 
-  echo "$hy2_link"
-  echo ""
-  info "二维码如下"
-  echo ""
-  qrencode -t UTF8 $hy2_link  
-  echo ""
-  info "客户端通用参数如下"
+  info "Hysteria2 通用参数如下"
   echo ""
   echo "服务器ip: $server_ip"
   echo "端口号: $hy_port"
   if [ "$ishopping" = "FALSE" ]; then
     echo "端口跳跃未开启"
   else
+    iptables_rule=$(iptables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    ipv6tables_rule=$(ip6tables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    output_range="${iptables_rule:-$ipv6tables_rule}"
+    formatted_range=$(echo "$output_range" | sed 's/:/-/')
     echo "跳跃端口为${formatted_range}"
   fi
   echo "密码password: $hy_password"
@@ -336,31 +309,16 @@ show_client_configuration() {
   vmess_uuid=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .users[0].uuid' /root/sbox/sbconfig_server.json)
   ws_path=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .transport.path' /root/sbox/sbconfig_server.json)
   
-  vmesswss_link='vmess://'$(echo '{"add":"icook.hk","aid":"0","host":"'$argo_domain'","id":"'$vmess_uuid'","net":"ws","path":"'${ws_path}?ed=2048'","port":"443","ps":"sing-box-vmess-tls","tls":"tls","type":"none","v":"2"}' | base64 -w 0)
-  vmessws_link='vmess://'$(echo '{"add":"icook.hk","aid":"0","host":"'$argo_domain'","id":"'$vmess_uuid'","net":"ws","path":"'${ws_path}?ed=2048'","port":"80","ps":"sing-box-vmess","tls":"","type":"none","v":"2"}' | base64 -w 0)
-  
   echo ""
-  show_notice "vmess ws(s) 通用链接和二维码"
+  show_notice "VMess 配置参数"
   echo ""
-  info "vmess wss通用链接,替换icook.hk为自己的优选ip可获得极致体验"
+  info "VMess 通用参数如下"
   echo ""
-  echo "$vmesswss_link"
-  echo ""
-  info "vmess wss二维码"
-  echo ""
-  qrencode -t UTF8 $vmesswss_link
-  echo ""
-  info "上述链接为wss 端口 443 可改为 2053 2083 2087 2096 8443"
-  echo ""
-  info "vmess ws链接，替换icook.hk为自己的优选ip可获得极致体验"
-  echo ""
-  echo "$vmessws_link"
-  echo ""
-  info "vmess ws 二维码"
-  echo ""
-  qrencode -t UTF8 $vmessws_link
-  echo ""
-  info "上述链接为ws 端口 80 可改为 8080 8880 2052 2082 2086 2095" 
+  echo "服务器域名: $argo_domain"
+  echo "UUID: $vmess_uuid"
+  echo "WebSocket路径: ${ws_path}?ed=2048"
+  echo "WSS端口: 443 (可选: 2053 2083 2087 2096 8443)"
+  echo "WS端口: 80 (可选: 8080 8880 2052 2082 2086 2095)"
   echo ""
 }
 

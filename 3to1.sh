@@ -111,13 +111,12 @@ install_pkgs() {
   done
 }
 install_shortcut() {
-  cat > /root/sbox/mianyang.sh << EOF
+  cat > /root/sbox/nowhash.sh << EOF
 #!/usr/bin/env bash
 bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh) \$1
 EOF
-  chmod +x /root/sbox/mianyang.sh
-  ln -sf /root/sbox/mianyang.sh /usr/bin/mianyang
-
+  chmod +x /root/sbox/nowhash.sh
+  ln -sf /root/sbox/nowhash.sh /usr/bin/nowhash
 }
 reload_singbox(){
     if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
@@ -250,12 +249,12 @@ show_client_configuration() {
   # get ip
   server_ip=$(grep -o "SERVER_IP='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   public_key=$(grep -o "PUBLIC_KEY='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  
   # reality
   reality_port=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .listen_port' /root/sbox/sbconfig_server.json)
   reality_uuid=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .users[0].uuid' /root/sbox/sbconfig_server.json)
   reality_server_name=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .tls.server_name' /root/sbox/sbconfig_server.json)
   short_id=$(jq -r '.inbounds[] | select(.tag == "vless-in") | .tls.reality.short_id[0]' /root/sbox/sbconfig_server.json)
-
 
   #聚合reality
   reality_link="vless://$reality_uuid@$server_ip:$reality_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reality_server_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#SING-BOX-REALITY"
@@ -284,25 +283,24 @@ show_client_configuration() {
   hy_port=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .listen_port' /root/sbox/sbconfig_server.json)
   hy_server_name=$(grep -o "HY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   hy_password=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .users[0].password' /root/sbox/sbconfig_server.json)
+  
   # Generate the hy link
-  # Generate the hy link
-   ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
-   if [ "$ishopping" = "FALSE" ]; then
-     hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name"
-   else
-     iptables_rule=$(iptables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
-     ipv6tables_rule=$(ip6tables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
-     if [ -z "$iptables_rule" ] && [ -z "$ipv6tables_rule" ]; then
-         echo "未找到端口范围。"
-         exit 1
-     fi
-     output_range="${iptables_rule:-$ipv6tables_rule}"
-     formatted_range=$(echo "$output_range" | sed 's/:/-/')
-
-     hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name&mport=${hy_port},${formatted_range}"
-   fi
+  ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
+  if [ "$ishopping" = "FALSE" ]; then
+    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name"
+  else
+    iptables_rule=$(iptables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    ipv6tables_rule=$(ip6tables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    if [ -z "$iptables_rule" ] && [ -z "$ipv6tables_rule" ]; then
+        echo "未找到端口范围。"
+        exit 1
+    fi
+    output_range="${iptables_rule:-$ipv6tables_rule}"
+    formatted_range=$(echo "$output_range" | sed 's/:/-/')
+    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name&mport=${hy_port},${formatted_range}"
+  fi
+  
   echo ""
-  echo "" 
   show_notice "Hysteria2通用链接 二维码 通用参数" 
   echo ""
   info "通用链接如下"
@@ -318,32 +316,31 @@ show_client_configuration() {
   echo "服务器ip: $server_ip"
   echo "端口号: $hy_port"
   if [ "$ishopping" = "FALSE" ]; then
-     echo "端口跳跃未开启"
-   else
-     echo "跳跃端口为${formatted_range}"
+    echo "端口跳跃未开启"
+  else
+    echo "跳跃端口为${formatted_range}"
   fi
   echo "密码password: $hy_password"
   echo "域名SNI: $hy_server_name"
   echo "跳过证书验证（允许不安全）: True"
   echo ""
-  echo "" 
-  sleep 2
+  
+  # Update argo domain if needed
   if [ -f "/root/sbox/argo.log" ]; then
     cat /root/sbox/argo.log | grep trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}' | xargs -I {} sed -i "s/ARGO_DOMAIN='.*'/ARGO_DOMAIN='{}'/g" /root/sbox/config
     rm -f /root/sbox/argo.log
   fi
-  #argo域名
+  
+  # vmess
   argo_domain=$(grep -o "ARGO_DOMAIN='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
-
   vmess_uuid=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .users[0].uuid' /root/sbox/sbconfig_server.json)
   ws_path=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .transport.path' /root/sbox/sbconfig_server.json)
   
   vmesswss_link='vmess://'$(echo '{"add":"icook.hk","aid":"0","host":"'$argo_domain'","id":"'$vmess_uuid'","net":"ws","path":"'${ws_path}?ed=2048'","port":"443","ps":"sing-box-vmess-tls","tls":"tls","type":"none","v":"2"}' | base64 -w 0)
   vmessws_link='vmess://'$(echo '{"add":"icook.hk","aid":"0","host":"'$argo_domain'","id":"'$vmess_uuid'","net":"ws","path":"'${ws_path}?ed=2048'","port":"80","ps":"sing-box-vmess","tls":"","type":"none","v":"2"}' | base64 -w 0)
-  echo ""
+  
   echo ""
   show_notice "vmess ws(s) 通用链接和二维码"
-  echo ""
   echo ""
   info "vmess wss通用链接,替换icook.hk为自己的优选ip可获得极致体验"
   echo ""
@@ -353,7 +350,7 @@ show_client_configuration() {
   echo ""
   qrencode -t UTF8 $vmesswss_link
   echo ""
-  info  "上述链接为wss 端口 443 可改为 2053 2083 2087 2096 8443"
+  info "上述链接为wss 端口 443 可改为 2053 2083 2087 2096 8443"
   echo ""
   info "vmess ws链接，替换icook.hk为自己的优选ip可获得极致体验"
   echo ""
@@ -365,485 +362,6 @@ show_client_configuration() {
   echo ""
   info "上述链接为ws 端口 80 可改为 8080 8880 2052 2082 2086 2095" 
   echo ""
-  echo ""
-  show_notice "clash-meta配置参数"
-cat << EOF
-
-port: 7890
-allow-lan: true
-mode: rule
-log-level: info
-unified-delay: true
-global-client-fingerprint: chrome
-ipv6: true
-dns:
-  enable: true
-  listen: :53
-  ipv6: true
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  default-nameserver: 
-    - 223.5.5.5
-    - 8.8.8.8
-  nameserver:
-    - https://dns.alidns.com/dns-query
-    - https://doh.pub/dns-query
-  fallback:
-    - https://1.0.0.1/dns-query
-    - tls://dns.google
-  fallback-filter:
-    geoip: true
-    geoip-code: CN
-    ipcidr:
-      - 240.0.0.0/4
-
-proxies:        
-  - name: Reality
-    type: vless
-    server: $server_ip
-    port: $reality_port
-    uuid: $reality_uuid
-    network: tcp
-    udp: true
-    tls: true
-    flow: xtls-rprx-vision
-    servername: $reality_server_name
-    client-fingerprint: chrome
-    reality-opts:
-      public-key: $public_key
-      short-id: $short_id
-
-  - name: Hysteria2
-    type: hysteria2
-    server: $server_ip
-    port: $hy_port
-    #  up和down均不写或为0则使用BBR流控
-    # up: "30 Mbps" # 若不写单位，默认为 Mbps
-    # down: "200 Mbps" # 若不写单位，默认为 Mbps
-    password: $hy_password
-    sni: $hy_server_name
-    skip-cert-verify: true
-    alpn:
-      - h3
-  - name: Vmess
-    type: vmess
-    server: icook.hk
-    port: 443
-    uuid: $vmess_uuid
-    alterId: 0
-    cipher: auto
-    udp: true
-    tls: true
-    client-fingerprint: chrome  
-    skip-cert-verify: true
-    servername: $argo_domain
-    network: ws
-    ws-opts:
-      path: /${ws_path}?ed=2048
-      headers:
-        Host: $argo_domain
-
-proxy-groups:
-  - name: 节点选择
-    type: select
-    proxies:
-      - 自动选择
-      - Reality
-      - Hysteria2
-      - Vmess
-      - DIRECT
-
-  - name: 自动选择
-    type: url-test #选出延迟最低的机场节点
-    proxies:
-      - Reality
-      - Hysteria2
-      - Vmess
-    url: "http://www.gstatic.com/generate_204"
-    interval: 300
-    tolerance: 50
-
-
-rules:
-    - GEOIP,LAN,DIRECT
-    - GEOIP,CN,DIRECT
-    - MATCH,节点选择
-
-EOF
-
-
-show_notice "sing-box1.8.0及以上客户端配置参数"
-cat << EOF
-{
-  "log": {
-    "level": "debug",
-    "timestamp": true
-  },
-  "experimental": {
-    "clash_api": {
-      "external_controller": "127.0.0.1:9090",
-      "external_ui_download_url": "",
-      "external_ui_download_detour": "",
-      "external_ui": "ui",
-      "secret": "",
-      "default_mode": "rule"
-    },
-    "cache_file": {
-      "enabled": true,
-      "store_fakeip": false
-    }
-  },
-  "dns": {
-    "servers": [
-      {
-        "tag": "proxyDns",
-        "address": "https://8.8.8.8/dns-query",
-        "detour": "proxy"
-      },
-      {
-        "tag": "localDns",
-        "address": "https://223.5.5.5/dns-query",
-        "detour": "direct"
-      },
-      {
-        "tag": "block",
-        "address": "rcode://success"
-      },
-      {
-        "tag": "remote",
-        "address": "fakeip"
-      }
-    ],
-    "rules": [
-      {
-        "domain": [
-          "ghproxy.com",
-          "cdn.jsdelivr.net",
-          "testingcf.jsdelivr.net"
-        ],
-        "server": "localDns"
-      },
-      {
-        "rule_set": "geosite-category-ads-all",
-        "server": "block"
-      },
-      {
-        "outbound": "any",
-        "server": "localDns",
-        "disable_cache": true
-      },
-      {
-        "rule_set": "geosite-cn",
-        "server": "localDns"
-      },
-      {
-        "clash_mode": "direct",
-        "server": "localDns"
-      },
-      {
-        "clash_mode": "global",
-        "server": "proxyDns"
-      },
-      {
-        "rule_set": "geosite-geolocation-!cn",
-        "server": "proxyDns"
-      },
-      {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
-        "server": "remote"
-      }
-    ],
-    "fakeip": {
-      "enabled": true,
-      "inet4_range": "198.18.0.0/15",
-      "inet6_range": "fc00::/18"
-    },
-    "independent_cache": true,
-    "strategy": "ipv4_only"
-  },
-  "inbounds": [
-    {
-      "type": "tun",
-      "inet4_address": "172.19.0.1/30",
-      "mtu": 9000,
-      "auto_route": true,
-      "strict_route": true,
-      "sniff": true,
-      "endpoint_independent_nat": false,
-      "stack": "system",
-      "platform": {
-        "http_proxy": {
-          "enabled": true,
-          "server": "127.0.0.1",
-          "server_port": 2080
-        }
-      }
-    },
-    {
-      "type": "mixed",
-      "listen": "127.0.0.1",
-      "listen_port": 2080,
-      "sniff": true,
-      "users": []
-    }
-  ],
-  "outbounds": [
-    {
-      "tag": "proxy",
-      "type": "selector",
-      "outbounds": [
-        "auto",
-        "direct",
-        "sing-box-reality",
-        "sing-box-hysteria2",
-        "sing-box-vmess"
-      ]
-    },
-    {
-      "type": "vless",
-      "tag": "sing-box-reality",
-      "uuid": "$reality_uuid",
-      "flow": "xtls-rprx-vision",
-      "packet_encoding": "xudp",
-      "server": "$server_ip",
-      "server_port": $reality_port,
-      "tls": {
-        "enabled": true,
-        "server_name": "$reality_server_name",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        },
-        "reality": {
-          "enabled": true,
-          "public_key": "$public_key",
-          "short_id": "$short_id"
-        }
-      }
-    },
-    {
-            "type": "hysteria2",
-            "server": "$server_ip",
-            "server_port": $hy_port,
-            "tag": "sing-box-hysteria2",
-            
-            "up_mbps": 100,
-            "down_mbps": 100,
-            "password": "$hy_password",
-            "tls": {
-                "enabled": true,
-                "server_name": "$hy_server_name",
-                "insecure": true,
-                "alpn": [
-                    "h3"
-                ]
-            }
-        },
-        {
-            "server": "icook.hk",
-            "server_port": 443,
-            "tag": "sing-box-vmess",
-            "tls": {
-                "enabled": true,
-                "server_name": "$argo_domain",
-                "insecure": true,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "packet_encoding": "packetaddr",
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$argo_domain"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws",
-                "max_early_data": 2048,
-                "early_data_header_name": "Sec-WebSocket-Protocol"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$vmess_uuid"
-        },
-    {
-      "tag": "direct",
-      "type": "direct"
-    },
-    {
-      "tag": "block",
-      "type": "block"
-    },
-    {
-      "tag": "dns-out",
-      "type": "dns"
-    },
-    {
-      "tag": "auto",
-      "type": "urltest",
-      "outbounds": [
-        "sing-box-reality",
-        "sing-box-hysteria2",
-        "sing-box-vmess"
-      ],
-      "url": "http://www.gstatic.com/generate_204",
-      "interval": "1m",
-      "tolerance": 50
-    },
-    {
-      "tag": "WeChat",
-      "type": "selector",
-      "outbounds": [
-        "direct",
-        "sing-box-reality",
-        "sing-box-hysteria2",
-        "sing-box-vmess"
-      ]
-    },
-    {
-      "tag": "Apple",
-      "type": "selector",
-      "outbounds": [
-        "direct",
-        "sing-box-reality",
-        "sing-box-hysteria2",
-        "sing-box-vmess"
-      ]
-    },
-    {
-      "tag": "Microsoft",
-      "type": "selector",
-      "outbounds": [
-        "direct",
-        "sing-box-reality",
-        "sing-box-hysteria2",
-        "sing-box-vmess"
-      ]
-    }
-  ],
-  "route": {
-    "auto_detect_interface": true,
-    "final": "proxy",
-    "rules": [
-      {
-        "protocol": "dns",
-        "outbound": "dns-out"
-      },
-      {
-        "network": "udp",
-        "port": 443,
-        "outbound": "block"
-      },
-      {
-        "rule_set": "geosite-category-ads-all",
-        "outbound": "block"
-      },
-      {
-        "clash_mode": "direct",
-        "outbound": "direct"
-      },
-      {
-        "clash_mode": "global",
-        "outbound": "proxy"
-      },
-      {
-        "domain": [
-          "clash.razord.top",
-          "yacd.metacubex.one",
-          "yacd.haishan.me",
-          "d.metacubex.one"
-        ],
-        "outbound": "direct"
-      },      
-      {
-        "rule_set": "geosite-wechat",
-        "outbound": "WeChat"
-      },
-      {
-        "rule_set": "geosite-geolocation-!cn",
-        "outbound": "proxy"
-      },
-      {
-        "ip_is_private": true,
-        "outbound": "direct"
-      },
-      {
-        "rule_set": "geoip-cn",
-        "outbound": "direct"
-      },
-      {
-        "rule_set": "geosite-cn",
-        "outbound": "direct"
-      },
-      {
-        "rule_set": "geosite-apple",
-        "outbound": "Apple"
-      },
-      {
-        "rule_set": "geosite-microsoft",
-        "outbound": "Microsoft"
-      }
-    ],
-    "rule_set": [
-      {
-        "tag": "geoip-cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/cn.srs",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-geolocation-!cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-!cn.srs",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-category-ads-all",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ads-all.srs",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-wechat",
-        "type": "remote",
-        "format": "source",
-        "url": "https://testingcf.jsdelivr.net/gh/Toperlock/sing-box-geosite@main/wechat.json",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-apple",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/apple.srs",
-        "download_detour": "direct"
-      },
-      {
-        "tag": "geosite-microsoft",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/microsoft.srs",
-        "download_detour": "direct"
-      }
-    ]
-  }
-}
-EOF
-
 }
 
 #enable bbr
@@ -895,7 +413,6 @@ modify_singbox() {
 }
 
 uninstall_singbox() {
-
     warning "开始卸载..."
     disable_hy2hopping
     # Stop and disable services
@@ -909,8 +426,8 @@ uninstall_singbox() {
     # Remove configuration and executable files
     rm -f /root/sbox/sbconfig_server.json
     rm -f /root/sbox/sing-box
-    rm -f /usr/bin/mianyang
-    rm -f /root/sbox/mianyang.sh
+    rm -f /usr/bin/nowhash
+    rm -f /root/sbox/nowhash.sh
     rm -f /root/sbox/cloudflared-linux
     rm -f /root/sbox/self-cert/private.key
     rm -f /root/sbox/self-cert/cert.pem
@@ -1532,7 +1049,7 @@ echo ""
 #install pkgs
 install_pkgs
 # Check if reality.json, sing-box, and sing-box.service already exist
-if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/mianyang.sh" ] && [ -f "/usr/bin/mianyang" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
+if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/nowhash.sh" ] && [ -f "/usr/bin/nowhash" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
     warning "sing-box-reality-hysteria2已安装"
     show_status
@@ -1571,7 +1088,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
       5)
           enable_bbr
-          mianyang
+          nowhash
           exit 0
           ;;
       6)
@@ -1828,7 +1345,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl restart sing-box
     install_shortcut
     show_client_configuration
-    hint "输入mianyang,打开菜单"
+    hint "输入nowhash,打开菜单"
 else
     error "check sing-box server config profile error!"
 fi

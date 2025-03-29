@@ -1,11 +1,14 @@
-# VPS 工具箱 🚀
+<h1 align="center" style="color: #FF0000; background-color: #FFE7E7; padding: 20px; border: 2px solid #FF0000;">
+⚠️ 警告 / WARNING ⚠️
 
-> ⚠️ **警告 / WARNING**
-> 
-> **本仓库仅供个人使用，严禁 Fork！**
-> 
-> **代码中包含其他开源项目的引用，如果私自使用，后果自负！**
-> 
+本仓库仅供个人使用，严禁 Fork 和商业使用！
+
+代码中包含其他开源项目的引用，如果私自使用，有隐藏风险，后果自负！
+
+
+</h1>
+
+# VPS 工具箱 🚀
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/PakandAlive/Folder.svg)](https://github.com/PakandAlive/Folder/stargazers)

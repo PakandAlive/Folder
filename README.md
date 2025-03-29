@@ -1,12 +1,13 @@
 <h1 align="center" style="color: #FF0000; background-color: #FFE7E7; padding: 20px; border: 2px solid #FF0000;">
 ⚠️ 警告 / WARNING ⚠️
 
-本仓库仅供个人使用，严禁 Fork 和商业使用！
+本仓库仅供个人使用，严禁 Fork ！
 
-代码中包含其他开源项目的引用，如果私自使用，有隐藏风险，后果自负！
+代码中包含其他开源项目的引用
+如果私自使用，有隐藏风险，后果自负！
 
 
-</h1>
+</h2>
 
 # VPS 工具箱 🚀
 

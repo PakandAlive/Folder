@@ -1,72 +1,73 @@
-const $ = new Surge();
-
+// ip-check.js
 !(async () => {
-  let panel = {
-    title: 'IP Quality Check',
-    content: '正在检查...'
-  };
-  
   try {
-    // 先显示加载状态
-    $done(panel);
+    console.log('开始执行IP检查脚本');
     
-    const response = await $.http.get({
-      url: 'https://ip.1eqw.com/',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive'
-      }
-    });
-
-    if (response.statusCode !== 200) {
-      throw new Error(`HTTP 请求失败: ${response.statusCode}`);
-    }
-
-    const html = response.body;
-    console.log('获取到网页内容');
-
-    // 使用更精确的正则表达式
-    const extractValue = (pattern) => {
-      const match = html.match(pattern);
-      return match ? match[1].trim() : '未知';
+    // 使用 $httpClient 替代 Surge
+    const getWebPage = () => {
+      return new Promise((resolve, reject) => {
+        $httpClient.get({
+          url: 'https://ip.1eqw.com/',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+          }
+        }, (error, response, data) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(data);
+          }
+        });
+      });
     };
 
-    // 提取数据
-    const score = extractValue(/"Score:"?\s*(\d+)/i);
-    const risk = extractValue(/"Risk:"?\s*([^"<]+)/i);
-    const isp = extractValue(/"ISP:"?\s*([^"<]+)/i);
-    const country = extractValue(/"Country:"?\s*([^"<]+)/i);
-    const isVpn = extractValue(/"Is VPN:"?\s*([^"<]+)/i);
-    const isProxy = extractValue(/"Is Proxy:"?\s*([^"<]+)/i);
+    const html = await getWebPage();
+    console.log('获取到响应内容');
 
-    console.log(`提取数据: score=${score}, risk=${risk}, isp=${isp}`);
+    if (!html) {
+      throw new Error('响应内容为空');
+    }
 
-    // 更新面板内容
-    panel = {
-      title: 'IP Quality Check',
+    // 解析网页内容
+    const scoreMatch = html.match(/Score:?\s*(\d+)/i);
+    const riskMatch = html.match(/Risk:?\s*([^<\n]+)/i);
+    const ispMatch = html.match(/ISP:?\s*([^<\n]+)/i);
+    const countryMatch = html.match(/Country:?\s*([^<\n]+)/i);
+    const isVpnMatch = html.match(/Is VPN:?\s*([^<\n]+)/i);
+    const isProxyMatch = html.match(/Is Proxy:?\s*([^<\n]+)/i);
+
+    console.log('解析结果：', {
+      score: scoreMatch && scoreMatch[1],
+      risk: riskMatch && riskMatch[1],
+      isp: ispMatch && ispMatch[1]
+    });
+
+    // 确保至少有一些数据
+    if (!scoreMatch && !riskMatch && !ispMatch) {
+      throw new Error('未能解析到任何数据');
+    }
+
+    const panel = {
+      title: "IP Quality Check",
       content: [
-        `分数: ${score}`,
-        `风险: ${risk}`,
-        `ISP: ${isp}`,
-        `国家: ${country}`,
-        `VPN: ${isVpn}`,
-        `代理: ${isProxy}`
+        `风险值: ${scoreMatch ? scoreMatch[1].trim() : '未知'}`,
+        `风险等级: ${riskMatch ? riskMatch[1].trim() : '未知'}`,
+        `ISP: ${ispMatch ? ispMatch[1].trim() : '未知'}`,
+        `国家: ${countryMatch ? countryMatch[1].trim() : '未知'}`,
+        `是否VPN: ${isVpnMatch ? isVpnMatch[1].trim() : '未知'}`,
+        `是否代理: ${isProxyMatch ? isProxyMatch[1].trim() : '未知'}`
       ].join('\n')
     };
 
     $done(panel);
   } catch (err) {
-    console.log(`发生错误: ${err.message}`);
+    console.log('发生错误：', err.message);
     
-    // 显示错误信息
-    panel = {
-      title: 'IP Quality Check',
-      content: `检查失败: ${err.message}\n请稍后重试`
-    };
-    
-    $done(panel);
+    $done({
+      title: "IP检查状态",
+      content: `检查失败: ${err.message}\n请检查网络连接或重试`
+    });
   }
 })();

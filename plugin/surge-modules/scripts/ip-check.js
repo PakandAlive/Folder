@@ -1,18 +1,18 @@
-#!name=IP 质量检查
-#!desc=检查当前 IP 的质量和风险等级
-
-[Script]
-ip-check = type=generic,timeout=5,script-path=ip_check.js
-
-[Panel]
-ip-check = script-name=ip-check,update-interval=1
-
 const API_KEY = '2822b0279f3968e29081bb29d037f66484ca5cab2a3a93be3e6d683b';
+
+const $http = typeof $httpClient !== 'undefined' ? $httpClient : null;
+
+if (!$http) {
+  $done({
+    title: 'IP风险查询',
+    content: '运行环境异常'
+  });
+}
 
 !(async () => {
   try {
     const response = await new Promise((resolve, reject) => {
-      $httpClient.get(`https://api.ipdata.co?api-key=${API_KEY}`, (error, response, data) => {
+      $http.get(`https://api.ipdata.co?api-key=${API_KEY}`, (error, response, data) => {
         if (error) reject(error);
         else resolve(data);
       });

@@ -5,4 +5,4 @@
 IP风险查询 = script-name=ip-check, update-interval=900
 
 [Script]
-ip-check = type=generic,timeout=10,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/surge-modules/scripts/ip-check.js
+ip-check = type=generic,timeout=10,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/surge-modules/scripts/ip-check.js 

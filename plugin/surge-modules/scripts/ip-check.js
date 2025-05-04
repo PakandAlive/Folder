@@ -2,7 +2,8 @@ const $ = new Surge();
 
 !(async () => {
   try {
-    // 发送HTTP GET请求获取网页内容
+    console.log('开始执行IP检查脚本');  // 添加调试日志
+    
     const response = await $.http.get({
       url: 'https://ip.1eqw.com/',
       headers: {
@@ -12,21 +13,37 @@ const $ = new Surge();
       }
     });
 
+    console.log('获取到响应：', response.status);  // 添加调试日志
+    
+    if (!response.body) {
+      throw new Error('响应内容为空');
+    }
+
     const html = response.body;
     
-    // 解析网页内容，提取所需信息
-    const scoreMatch = html.match(/Score:<\/\w+>\s*(\d+)/i);
-    const riskMatch = html.match(/Risk:<\/\w+>\s*([^<]+)/i);
-    const ispMatch = html.match(/ISP:<\/\w+>\s*([^<]+)/i);
-    const countryMatch = html.match(/Country:<\/\w+>\s*([^<]+)/i);
-    const isVpnMatch = html.match(/Is VPN:<\/\w+>\s*([^<]+)/i);
-    const isProxyMatch = html.match(/Is Proxy:<\/\w+>\s*([^<]+)/i);
+    // 修改正则表达式，使其更宽松
+    const scoreMatch = html.match(/Score:?\s*(\d+)/i);
+    const riskMatch = html.match(/Risk:?\s*([^<\n]+)/i);
+    const ispMatch = html.match(/ISP:?\s*([^<\n]+)/i);
+    const countryMatch = html.match(/Country:?\s*([^<\n]+)/i);
+    const isVpnMatch = html.match(/Is VPN:?\s*([^<\n]+)/i);
+    const isProxyMatch = html.match(/Is Proxy:?\s*([^<\n]+)/i);
 
-    // 构建显示内容
+    console.log('解析结果：', {  // 添加调试日志
+      score: scoreMatch && scoreMatch[1],
+      risk: riskMatch && riskMatch[1],
+      isp: ispMatch && ispMatch[1]
+    });
+
+    // 确保至少有一些数据
+    if (!scoreMatch && !riskMatch && !ispMatch) {
+      throw new Error('未能解析到任何数据');
+    }
+
     const panel = {
       title: "IP Quality Check",
       content: [
-        `风险值: ${scoreMatch ? scoreMatch[1] : '未知'}`,
+        `风险值: ${scoreMatch ? scoreMatch[1].trim() : '未知'}`,
         `风险等级: ${riskMatch ? riskMatch[1].trim() : '未知'}`,
         `ISP: ${ispMatch ? ispMatch[1].trim() : '未知'}`,
         `国家: ${countryMatch ? countryMatch[1].trim() : '未知'}`,
@@ -35,24 +52,13 @@ const $ = new Surge();
       ].join('\n')
     };
 
-    // 添加缓存
-    $.write(JSON.stringify({
-      timestamp: Date.now(),
-      data: panel
-    }), 'ip_quality_cache');
-
     $done(panel);
   } catch (err) {
-    // 如果发生错误，尝试读取缓存
-    const cache = $.read('ip_quality_cache');
-    if (cache) {
-      const cacheData = JSON.parse(cache);
-      $done(cacheData.data);
-    } else {
-      $done({
-        title: "IP检查失败",
-        content: `错误信息: ${err.message}`
-      });
-    }
+    console.log('发生错误：', err.message);  // 添加调试日志
+    
+    $done({
+      title: "IP检查状态",
+      content: `检查失败: ${err.message}\n请检查网络连接或重试`
+    });
   }
 })();

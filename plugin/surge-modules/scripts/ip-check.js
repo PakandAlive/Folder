@@ -1,17 +1,26 @@
-// IPdata API 查询脚本
+#!name=IP 质量检查
+#!desc=检查当前 IP 的质量和风险等级
+
+[Script]
+ip-check = type=generic,timeout=5,script-path=ip_check.js
+
+[Panel]
+ip-check = script-name=ip-check,update-interval=1
+
 const API_KEY = '2822b0279f3968e29081bb29d037f66484ca5cab2a3a93be3e6d683b';
 
-$httpClient.get(`https://api.ipdata.co?api-key=${API_KEY}`, function(error, response, data) {
-  if (error) {
-    $done({
-      title: 'IP检查',
-      content: '请求失败: ' + error
-    });
-    return;
-  }
+let magicVariable = {};
 
+!(async () => {
   try {
-    const ipInfo = JSON.parse(data);
+    const response = await new Promise((resolve, reject) => {
+      $httpClient.get(`https://api.ipdata.co?api-key=${API_KEY}`, (error, response, data) => {
+        if (error) reject(error);
+        else resolve(data);
+      });
+    });
+    
+    const ipInfo = JSON.parse(response);
     
     // 计算一个简单的风险评分（0-100）
     let riskScore = 0;
@@ -52,4 +61,21 @@ $httpClient.get(`https://api.ipdata.co?api-key=${API_KEY}`, function(error, resp
       content: '解析失败: ' + err.message
     });
   }
-}); 
+})();
+
+function httpGet(url) {
+  return new Promise((resolve, reject) => {
+    $httpClient.get(url, (error, response, data) => {
+      if (error) reject(error);
+      else resolve(data);
+    });
+  });
+}
+
+function getParams(param) {
+  return param ? param.split("&").reduce((acc, item) => {
+    const [key, value] = item.split("=");
+    acc[key] = value;
+    return acc;
+  }, {}) : {};
+} 

@@ -9,8 +9,6 @@ ip-check = script-name=ip-check,update-interval=1
 
 const API_KEY = '2822b0279f3968e29081bb29d037f66484ca5cab2a3a93be3e6d683b';
 
-let magicVariable = {};
-
 !(async () => {
   try {
     const response = await new Promise((resolve, reject) => {
@@ -45,7 +43,7 @@ let magicVariable = {};
     }
 
     $done({
-      title: 'IP质量检查',
+      title: 'IP风险查询',
       content: [
         `IP: ${ipInfo.ip}`,
         `风险值: ${riskScore}`,
@@ -57,8 +55,8 @@ let magicVariable = {};
     });
   } catch (err) {
     $done({
-      title: 'IP检查',
-      content: '解析失败: ' + err.message
+      title: 'IP风险查询',
+      content: '查询失败: ' + err.message
     });
   }
 })();

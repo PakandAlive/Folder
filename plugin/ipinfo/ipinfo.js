@@ -4,7 +4,7 @@
  */
 
 // 自定义API地址
-const API_URL = "http://13.36.237.141:7896";
+const API_URL = "https://info.gooodjob.me/";
 
 // 主函数
 !(async () => {
@@ -67,15 +67,77 @@ async function getIpInfo() {
     });
     
     if (response.status === 200) {
-      return JSON.parse(response.body);
+      const data = JSON.parse(response.body);
+      
+      // 检查是否包含错误消息
+      if (data && data.message && data.message.includes("localhost")) {
+        console.log("API在本地环境中运行，无法获取IP");
+        // 使用备用API
+        return await getBackupIpInfo();
+      }
+      
+      return data;
     } else {
       console.log(`获取IP信息失败: ${response.status}`);
-      return null;
+      return await getBackupIpInfo();
     }
   } catch (error) {
     console.log(`获取IP信息异常: ${error}`);
+    return await getBackupIpInfo();
+  }
+}
+
+// 备用IP信息获取方法
+async function getBackupIpInfo() {
+  try {
+    const response = await $httpClient.get({
+      url: "https://ip-api.com/json/?lang=zh-CN",
+      headers: {
+        "User-Agent": "Surge/IP查询",
+        "Accept": "application/json"
+      }
+    });
+    
+    if (response.status === 200) {
+      const data = JSON.parse(response.body);
+      // 转换数据结构以兼容原有代码
+      if (data && data.status === "success") {
+        return {
+          ip: data.query,
+          country_name: data.country,
+          city: data.city,
+          company: { name: data.isp },
+          emoji_flag: getFlagEmoji(data.countryCode),
+          currency: { code: getCurrencyCode(data.countryCode) },
+          time_zone: { abbr: data.timezone ? data.timezone.split('/')[1] : "未知" }
+        };
+      }
+      return null;
+    } else {
+      console.log(`备用API获取IP信息失败: ${response.status}`);
+      return null;
+    }
+  } catch (error) {
+    console.log(`备用API获取IP信息异常: ${error}`);
     return null;
   }
+}
+
+// 根据国家代码获取国旗emoji
+function getFlagEmoji(countryCode) {
+  if (!countryCode) return "🌐";
+  const offset = 127397;
+  const codePoints = [...countryCode.toUpperCase()].map(c => c.charCodeAt() + offset);
+  return String.fromCodePoint(...codePoints);
+}
+
+// 简单的货币代码映射
+function getCurrencyCode(countryCode) {
+  const currencyMap = {
+    "US": "USD", "CN": "CNY", "JP": "JPY", "HK": "HKD", "TW": "TWD",
+    "GB": "GBP", "EU": "EUR", "RU": "RUB", "KR": "KRW", "SG": "SGD"
+  };
+  return currencyMap[countryCode] || "未知";
 }
 
 // 获取图标

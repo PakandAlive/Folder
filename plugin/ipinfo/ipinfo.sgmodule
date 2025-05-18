@@ -1,9 +1,18 @@
 #!name=IP信息查询
-#!desc=查询当前IP地址的详细信息并显示通知
+#!desc=显示当前网络信息,支持查询节点信息,支持 IPv4/IPv6,支持多种数据源,支持面板展示
 
 [Script]
-IP信息查询 = type=cron,cronexp="0 */6 * * *",script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/ipinfo/ipinfo.js,wake-system=1,timeout=30
-IP查询面板 = type=generic,timeout=10,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/ipinfo/ipinfo.js,argument=icon=info.circle
+# 请求处理
+IP信息查询请求 = type=http-request,pattern=^https?:\/\/info\.gooodjob\.me,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/ipinfo/ipinfo.js,timeout=120
+
+# 网络变化事件
+IP信息查询事件 = type=event,event-name=network-changed,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/ipinfo/ipinfo.js,argument=TYPE=EVENT&SSID=1&LAN=1&IPv6=1&MASK=1&PRIVACY=1&FLAG=1&ASN=1&ORG=1&LANDING_IPv4=gooodjob&ENTRANCE_DELAY=3&TIMEOUT=5&EVENT_DELAY=3&RETRIES=2&RETRY_DELAY=1
+
+# 面板配置
+IP信息查询面板 = type=generic,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/ipinfo/ipinfo.js,argument=SSID=1&LAN=1&IPv6=1&MASK=1&PRIVACY=1&FLAG=1&ASN=1&ORG=1&LANDING_IPv4=gooodjob&ENTRANCE_DELAY=3&TIMEOUT=5&RETRIES=2&RETRY_DELAY=1
 
 [Panel]
-IP查询 = script-name=IP查询面板,update-interval=3600 
+IP信息查询 = script-name=IP信息查询面板,update-interval=1
+
+[MITM]
+hostname = %APPEND% info.gooodjob.me 

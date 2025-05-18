@@ -1,0 +1,9 @@
+#!name=IP信息查询
+#!desc=查询当前IP地址的详细信息并显示通知
+
+[Script]
+IP信息查询 = type=cron,cronexp="0 */6 * * *",script-path=https://raw.githubusercontent.com/用户名/仓库名/main/ipinfo.js,wake-system=1,timeout=30
+IP查询面板 = type=generic,timeout=10,script-path=https://raw.githubusercontent.com/用户名/仓库名/main/ipinfo.js,argument=icon=info.circle
+
+[Panel]
+IP查询 = script-name=IP查询面板,update-interval=3600 

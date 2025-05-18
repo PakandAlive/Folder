@@ -1,297 +1,260 @@
-/**
- * IP信息查询模块 - 使用自定义API获取IP信息
- * 支持Surge面板显示和定时通知功能
- * 版本: 1.2.0 - 修复API请求方式
- * 
- * 更新说明:
- * 1. 修复了API请求地址格式问题
- * 2. 增加了自动获取当前IP的功能
- * 3. 优化了错误处理和日志记录
- * 4. 完善了备用API处理逻辑
- */
+/*
+* IP 信息查询模块 - Surge
+* 用于在面板中展示当前 IP 信息
+* 版本 4.1.0 (2023-05-19)
+*/
 
-// 自定义API地址（不带最后的斜杠）
-const API_BASE_URL = "https://info.gooodjob.me";
-// 默认查询的IP - 支持手动指定固定IP，留空则自动获取
-const DEFAULT_QUERY_IP = "";
-// 是否启用调试模式
-const DEBUG = true;
+const DEBUG = true; // 开启调试日志
+const API_BASE_URL = "https://info.gooodjob.me"; // 主API地址
+
+// 初始化面板
+const panel = {
+  title: "获取中...", 
+  content: "正在获取 IP 信息..."
+};
+
+// 调试日志函数
+function logDebug(message) {
+  if (DEBUG) {
+    console.log(`[IP查询] ${message}`);
+  }
+}
+
+// 错误日志函数
+function logError(message) {
+  console.log(`[IP查询错误] ${message}`);
+}
 
 // 主函数
 !(async () => {
-  const arg = typeof $argument !== "undefined" ? $argument : "";
-  const isPanel = arg.includes("icon");
+  logDebug("开始执行IP信息查询脚本...");
   
   try {
-    logDebug("开始执行IP信息查询...");
-    
     // 获取IP信息
-    const info = await getIpInfo();
+    const ipInfo = await fetchIPInfo();
     
-    if (!info) {
-      logError("获取IP信息失败，返回为空");
-      // 如果获取失败
-      if (isPanel) {
-        $done({
-          title: "IP信息查询",
-          content: "获取信息失败，请检查网络\n点击重试或参考故障排除指南",
-          icon: getIcon("xmark.circle", "#C9C9C9"),
-          backgroundColor: "#555555"
-        });
-      } else {
-        $notification.post("IP信息查询", "获取信息失败", "请检查网络连接或查看日志");
-        $done();
-      }
-      return;
-    }
-    
-    logDebug("成功获取IP信息");
-    logDebug(JSON.stringify(info));
-    
-    // 格式化数据
-    const ip = info.ip || "未知";
-    const country = info.country_name || "未知";
-    const city = info.city || "未知";
-    const isp = info.company?.name || "未知";
-    const emoji = info.emoji_flag || "🌐";
-    
-    // 构建显示内容
-    const title = `${emoji} ${ip} - ${country}`;
-    const content = `位置: ${city}\nISP: ${isp}\n货币: ${info.currency?.code || "未知"}\n时区: ${info.time_zone?.abbr || "未知"}`;
-    
-    logDebug(`面板标题: ${title}`);
-    logDebug(`面板内容: ${content}`);
-    
-    // 根据是否为面板模式输出不同内容
-    if (isPanel) {
-      $done({
-        title: title,
-        content: content,
-        icon: getIcon("network", "#005CAF"),
-        backgroundColor: "#1E1E1E"
-      });
+    if (ipInfo.error) {
+      // 获取失败
+      panel.title = "⚠️ 获取失败";
+      panel.content = ipInfo.error;
+      logError(ipInfo.error);
     } else {
-      $notification.post(title, "", content);
-      $done();
+      // 获取成功，格式化面板内容
+      const flag = getCountryFlag(ipInfo.countryCode);
+      panel.title = `${flag} ${ipInfo.ip}`;
+      panel.content = [
+        `国家/地区: ${ipInfo.country}`,
+        `城市: ${ipInfo.city || '未知'}`,
+        `运营商: ${ipInfo.isp || '未知'}`,
+        `时区: ${ipInfo.timezone || '未知'}`,
+        ``,
+        `更新时间: ${new Date().toLocaleTimeString()}`
+      ].join("\n");
+      
+      logDebug(`成功获取IP信息: ${JSON.stringify(ipInfo)}`);
     }
   } catch (err) {
-    logError(`主函数执行错误: ${err.message}`);
-    if (isPanel) {
-      $done({
-        title: "IP信息查询出错",
-        content: `错误信息: ${err.message}`,
-        icon: getIcon("xmark.circle", "#FF0000"),
-        backgroundColor: "#555555"
-      });
-    } else {
-      $notification.post("IP信息查询", "执行出错", err.message);
-      $done();
-    }
+    // 处理异常
+    panel.title = "❌ 查询出错";
+    panel.content = `发生错误: ${err.message || '未知错误'}`;
+    logError(`脚本执行出错: ${err.message}`);
   }
+  
+  // 输出面板
+  $done({
+    title: panel.title,
+    content: panel.content
+  });
 })();
 
-// 获取IP信息
-async function getIpInfo() {
-  logDebug("开始获取IP信息...");
-  
-  // 1. 首先尝试获取当前IP
-  let targetIp = DEFAULT_QUERY_IP;
-  
-  if (!targetIp) {
-    try {
-      // 尝试通过ipify API获取当前IP
-      logDebug("尝试获取当前IP...");
-      const ipifyUrl = "https://api.ipify.org?format=json";
-      
-      const ipifyResponse = await $httpClient.get({
-        url: ipifyUrl,
-        headers: { "Accept": "application/json" }
-      });
-      
-      if (ipifyResponse && ipifyResponse.status === 200) {
-        const ipData = JSON.parse(ipifyResponse.body);
-        if (ipData && ipData.ip) {
-          targetIp = ipData.ip;
-          logDebug(`成功获取当前IP: ${targetIp}`);
-        }
-      }
-    } catch (ipError) {
-      logError(`获取当前IP失败: ${ipError.message}`);
-    }
-  }
-  
-  // 2. 如果获取当前IP失败，使用一个默认的公共IP进行测试
-  if (!targetIp) {
-    targetIp = "8.8.8.8"; // 默认使用谷歌DNS服务器IP
-    logDebug(`使用默认测试IP: ${targetIp}`);
-  }
-  
-  // 3. 构建完整的API URL
-  const fullApiUrl = `${API_BASE_URL}/${targetIp}`;
-  logDebug(`发起请求: ${fullApiUrl}`);
-  
+// 获取IP信息的主函数，尝试多个API直到成功
+async function fetchIPInfo() {
+  // 首先，获取当前IP地址
+  let currentIP;
   try {
-    const startTime = new Date().getTime();
+    logDebug("正在获取当前IP地址...");
+    const ipifyResponse = await $httpClient.get({
+      url: "https://api.ipify.org?format=json",
+      headers: {
+        "User-Agent": "Surge/IP查询"
+      }
+    });
     
+    if (ipifyResponse && ipifyResponse.body) {
+      const ipData = JSON.parse(ipifyResponse.body);
+      if (ipData && ipData.ip) {
+        currentIP = ipData.ip;
+        logDebug(`成功获取当前IP: ${currentIP}`);
+      }
+    }
+  } catch (err) {
+    logDebug(`获取当前IP时出错: ${err.message}`);
+  }
+  
+  // 如果获取IP失败，使用备用IP
+  if (!currentIP) {
+    currentIP = "8.8.8.8"; // 使用谷歌DNS服务器IP作为默认值
+    logDebug(`使用默认IP: ${currentIP}`);
+  }
+  
+  // 尝试从主API获取IP信息
+  try {
+    logDebug(`尝试从主API获取IP信息: ${API_BASE_URL}/${currentIP}`);
     const response = await $httpClient.get({
-      url: fullApiUrl,
+      url: `${API_BASE_URL}/${currentIP}`,
       headers: {
         "User-Agent": "Surge/IP查询",
         "Accept": "application/json"
       }
     });
     
-    const endTime = new Date().getTime();
-    logDebug(`请求耗时: ${endTime - startTime}ms`);
-    
-    if (!response) {
-      logError("请求返回为空");
-      return await getBackupIpInfo(targetIp);
-    }
-    
-    logDebug(`状态码: ${response.status}`);
-    
-    if (response.status === 200) {
-      try {
-        const rawBody = response.body;
-        logDebug(`原始响应: ${rawBody.length > 100 ? rawBody.substring(0, 100) + "..." : rawBody}`);
+    if (response && response.body) {
+      const data = JSON.parse(response.body);
+      
+      // 检查是否有错误消息
+      if (data.message && data.message.includes("localhost")) {
+        logDebug("主API无法识别IP，尝试备用API");
+        return await fallbackToBackupAPIs(currentIP);
+      }
+      
+      // 检查返回数据是否有效
+      if (data.ip) {
+        logDebug("成功从主API获取数据");
         
-        const data = JSON.parse(rawBody);
-        
-        // 检查是否包含错误消息
-        if (data && data.message) {
-          logError(`API返回消息: ${data.message}`);
-          if (data.message.includes("localhost") || data.message.includes("Invalid")) {
-            logDebug("API返回错误消息，切换到备用API");
-            // 使用备用API
-            return await getBackupIpInfo(targetIp);
-          }
-        }
-        
-        // 检查关键字段是否存在
-        if (!data.ip) {
-          logError("API返回数据缺少IP字段");
-          logDebug("返回数据: " + JSON.stringify(data));
-          return await getBackupIpInfo(targetIp);
-        }
-        
-        return data;
-      } catch (parseError) {
-        logError(`解析响应JSON失败: ${parseError.message}`);
-        logDebug(`原始响应内容: ${response.body}`);
-        return await getBackupIpInfo(targetIp);
+        return {
+          ip: data.ip,
+          country: data.country_name || "未知",
+          countryCode: data.country_code || "",
+          city: data.city || "未知",
+          regionName: data.region || "",
+          timezone: data.time_zone?.name || "未知",
+          isp: data.company?.name || data.isp || "未知",
+          org: data.org || ""
+        };
+      } else {
+        logDebug("主API返回的数据不完整，尝试备用API");
+        return await fallbackToBackupAPIs(currentIP);
       }
     } else {
-      logError(`获取IP信息失败, 状态码: ${response.status}`);
-      return await getBackupIpInfo(targetIp);
+      logDebug("主API返回为空，尝试备用API");
+      return await fallbackToBackupAPIs(currentIP);
     }
-  } catch (error) {
-    logError(`获取IP信息异常: ${error.message}`);
-    if (error.stack) logDebug(`错误堆栈: ${error.stack}`);
-    return await getBackupIpInfo(targetIp);
+  } catch (err) {
+    logDebug(`主API请求出错: ${err.message}，尝试备用API`);
+    return await fallbackToBackupAPIs(currentIP);
   }
 }
 
-// 备用IP信息获取方法
-async function getBackupIpInfo(targetIp) {
-  logDebug("开始使用备用API获取IP信息...");
+// 备用API功能
+async function fallbackToBackupAPIs(ip) {
+  // 备用API列表
+  const backupAPIs = [
+    { name: "IP-API", fetch: () => fetchFromIPAPI(ip) },
+    { name: "ipinfo.io", fetch: fetchFromIpInfo }
+  ];
+  
+  logDebug(`开始尝试 ${backupAPIs.length} 个备用API...`);
+  
+  // 依次尝试备用API
+  for (const api of backupAPIs) {
+    try {
+      logDebug(`尝试从备用API ${api.name} 获取IP信息...`);
+      const result = await api.fetch();
+      if (!result.error) {
+        logDebug(`成功从备用API ${api.name} 获取IP信息`);
+        return result;
+      } else {
+        logDebug(`备用API ${api.name} 获取失败: ${result.error}`);
+      }
+    } catch (err) {
+      logDebug(`从备用API ${api.name} 获取时出错: ${err.message}`);
+    }
+  }
+  
+  // 所有备用API都失败
+  return { error: "所有API均获取失败，请检查网络连接" };
+}
+
+// 从IP-API获取IP信息
+async function fetchFromIPAPI(ip) {
   try {
-    // 如果没有提供IP，尝试使用公共IP
-    if (!targetIp) targetIp = "";
-    
-    // 备用API支持在URL中不指定IP，将自动检测当前IP
-    const backupUrl = `https://ip-api.com/json/${targetIp}?lang=zh-CN`;
-    logDebug(`发起备用请求: ${backupUrl}`);
+    const url = ip ? `http://ip-api.com/json/${ip}?lang=zh-CN` : "http://ip-api.com/json?lang=zh-CN";
+    logDebug(`正在从IP-API获取信息: ${url}`);
     
     const response = await $httpClient.get({
-      url: backupUrl,
+      url: url,
       headers: {
-        "User-Agent": "Surge/IP查询_备用",
-        "Accept": "application/json"
+        "User-Agent": "Surge/IP查询"
       }
     });
     
-    if (!response) {
-      logError("备用API请求返回为空");
-      return null;
+    if (!response || !response.body) {
+      return { error: "IP-API返回为空" };
     }
     
-    logDebug(`备用API状态码: ${response.status}`);
-    
-    if (response.status === 200) {
-      try {
-        const data = JSON.parse(response.body);
-        logDebug(`备用API返回: ${JSON.stringify(data).substring(0, 100)}...`);
-        
-        // 转换数据结构以兼容原有代码
-        if (data && data.status === "success") {
-          const result = {
-            ip: data.query,
-            country_name: data.country,
-            city: data.city,
-            company: { name: data.isp },
-            emoji_flag: getFlagEmoji(data.countryCode),
-            currency: { code: getCurrencyCode(data.countryCode) },
-            time_zone: { abbr: data.timezone ? data.timezone.split('/')[1] : "未知" }
-          };
-          
-          logDebug("备用API数据转换成功");
-          return result;
-        } else {
-          logError("备用API返回状态不是success");
-          return null;
-        }
-      } catch (parseError) {
-        logError(`解析备用API响应JSON失败: ${parseError.message}`);
-        return null;
-      }
-    } else {
-      logError(`备用API获取IP信息失败, 状态码: ${response.status}`);
-      return null;
+    const data = JSON.parse(response.body);
+    if (data.status !== "success") {
+      return { error: `IP-API返回失败状态: ${data.message || 'Unknown'}` };
     }
-  } catch (error) {
-    logError(`备用API异常: ${error.message}`);
-    return null;
-  }
-}
-
-// 根据国家代码获取国旗emoji
-function getFlagEmoji(countryCode) {
-  if (!countryCode) return "🌐";
-  try {
-    const offset = 127397;
-    const codePoints = [...countryCode.toUpperCase()].map(c => c.charCodeAt() + offset);
-    return String.fromCodePoint(...codePoints);
-  } catch (e) {
-    logError(`获取国旗emoji出错: ${e.message}`);
-    return "🌐";
-  }
-}
-
-// 简单的货币代码映射
-function getCurrencyCode(countryCode) {
-  try {
-    const currencyMap = {
-      "US": "USD", "CN": "CNY", "JP": "JPY", "HK": "HKD", "TW": "TWD",
-      "GB": "GBP", "EU": "EUR", "RU": "RUB", "KR": "KRW", "SG": "SGD"
+    
+    return {
+      ip: data.query,
+      country: data.country,
+      countryCode: data.countryCode,
+      city: data.city,
+      regionName: data.regionName,
+      timezone: data.timezone,
+      isp: data.isp,
+      org: data.org
     };
-    return currencyMap[countryCode] || "未知";
-  } catch (e) {
-    logError(`获取货币代码出错: ${e.message}`);
-    return "未知";
+  } catch (err) {
+    return { error: `IP-API请求出错: ${err.message}` };
   }
 }
 
-// 获取图标
-function getIcon(name, color) {
-  return `${encodeURIComponent(name)},${color}`;
+// 从ipinfo.io获取IP信息
+async function fetchFromIpInfo() {
+  try {
+    logDebug("正在从ipinfo.io获取信息...");
+    const response = await $httpClient.get({
+      url: "https://ipinfo.io/json",
+      headers: {
+        "User-Agent": "Surge/IP查询"
+      }
+    });
+    
+    if (!response || !response.body) {
+      return { error: "ipinfo.io返回为空" };
+    }
+    
+    const data = JSON.parse(response.body);
+    if (!data || !data.ip) {
+      return { error: "ipinfo.io返回格式错误" };
+    }
+    
+    return {
+      ip: data.ip,
+      country: data.country,
+      countryCode: data.country,
+      city: data.city,
+      regionName: data.region,
+      timezone: data.timezone,
+      isp: data.org,
+      org: data.org
+    };
+  } catch (err) {
+    return { error: `ipinfo.io请求出错: ${err.message}` };
+  }
 }
 
-// 日志函数
-function logDebug(message) {
-  if (DEBUG) console.log(`[IP查询-调试] ${message}`);
-}
-
-function logError(message) {
-  console.log(`[IP查询-错误] ${message}`);
+// 获取国家旗帜的Emoji
+function getCountryFlag(countryCode) {
+  if (!countryCode) return "🏳️";
+  
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt());
+  
+  return String.fromCodePoint(...codePoints);
 } 

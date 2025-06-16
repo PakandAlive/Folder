@@ -25,7 +25,7 @@ show_main_menu() {
     printf " 10)哪吒探针          11)清理Nezha         12)Serv00后台\n"
     printf " 13)流媒体检测        14)Docker监测        15)解压工具\n"
     printf " 16)Hummingbot        17)查看Sbox链接      18)PM2状态\n"
-    printf " 19)修改系统密码\n"
+    printf " 19)修改系统密码      20)安装H-UI\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -56,6 +56,7 @@ show_proxy_menu() {
     echo "2) 安装 Alpine Hysteria2"
     echo "3) 安装 Serv00 Hysteria2"
     echo "4) 安装 X-UI"
+    echo "5) 安装 H-UI"
     echo ""
     echo "0) 返回主菜单"
     echo "------------------------"
@@ -123,6 +124,10 @@ execute_proxy() {
         4)
             echo "正在安装 X-UI..."
             bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
+            ;;
+        5)
+            echo "正在安装 H-UI..."
+            bash <(curl -fsSL https://raw.githubusercontent.com/jonssonyan/h-ui/main/install.sh)
             ;;
     esac
 }
@@ -254,7 +259,7 @@ handle_submenu() {
                 ;;
             2)
                 show_proxy_menu
-                read -p "请选择操作 (0-4): " choice
+                read -p "请选择操作 (0-5): " choice
                 if [ "$choice" = "0" ]; then
                     break
                 fi
@@ -276,7 +281,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-19): " choice
+    read -p "请选择操作 (0-20): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -301,6 +306,7 @@ while true; do
         17) execute_tools 3 ;;
         18) execute_tools 4 ;;
         19) execute_tools 5 ;;
+        20) execute_proxy 5 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

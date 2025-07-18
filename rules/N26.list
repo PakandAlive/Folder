@@ -1,8 +1,9 @@
-DOMAIN, sdk.fra-02.braze.eu
-DOMAIN-SUFFIX, n26.com
-DOMAIN-SUFFIX, prodregistryv2.org
-DOMAIN-SUFFIX, tech26.de
-DOMAIN-SUFFIX, number26.de
-DOMAIN-SUFFIX, usercentrics.eu
-DOMAIN-SUFFIX, bugsnag.com
-DOMAIN-SUFFIX, featureassets.org
+DOMAIN,sdk.fra-02.braze.eu
+DOMAIN-SUFFIX,tech26.de
+DOMAIN-SUFFIX,number26.de
+DOMAIN-SUFFIX,bugsnag.com
+DOMAIN,api.tech26.de
+DOMAIN,featureassets.org
+DOMAIN,sessions.bugsnag.com
+DOMAIN,api.usercentrics.eu
+DOMAIN,prodregistryv2.org

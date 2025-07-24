@@ -20,13 +20,13 @@ show_main_menu() {
     show_logo
     echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
-    printf " ${GREEN}01)安装Docker${NC}        ${GREEN}02)安装1Panel${NC}        ${ORANGE}03)安装H-UI${NC}\n"
-    printf " ${BLUE}04)修改系统密码${NC}      ${ORANGE}05)安装3to1${NC}          ${ORANGE}06)哪吒探针${NC}\n"
-    printf " ${BLUE}07)Docker监测${NC}        ${ORANGE}08)安装X-UI${NC}          ${GREEN}09)解压工具${NC}\n"
-    printf " ${ORANGE}10)Alpine Hy2${NC}        ${GREEN}11)清理Nezha${NC}         ${GREEN}12)Serv00后台${NC}\n"
-    printf " ${GREEN}13)流媒体检测${NC}        ${ORANGE}14)Serv00 Hy2${NC}        ${GREEN}15)优选IP${NC}\n"
-    printf " ${GREEN}16)Hummingbot${NC}        ${GREEN}17)查看Sbox链接${NC}      ${GREEN}18)PM2状态${NC}\n"
-    printf " ${BLUE}19)DockerPakNotion${NC}   ${GREEN}20)安装TM${NC}      ${BLUE}21)Dockerweb${NC}\n"
+    printf " ${GREEN}01)安装Docker${NC}        ${GREEN}02)安装1Panel${NC}        ${GREEN}03)修改系统密码${NC}\n"
+    printf " ${GREEN}04)解压工具${NC}          ${GREEN}05)清理Nezha${NC}         ${GREEN}06)Serv00后台${NC}\n"
+    printf " ${GREEN}07)流媒体检测${NC}        ${GREEN}08)优选IP${NC}            ${GREEN}09)Hummingbot${NC}\n"
+    printf " ${GREEN}10)查看Sbox链接${NC}      ${GREEN}11)PM2状态${NC}           ${GREEN}12)安装TM${NC}\n"
+    printf " ${ORANGE}13)安装H-UI${NC}          ${ORANGE}14)安装3to1${NC}          ${ORANGE}15)哪吒探针${NC}\n"
+    printf " ${ORANGE}16)安装X-UI${NC}          ${ORANGE}17)Alpine Hy2${NC}        ${ORANGE}18)Serv00 Hy2${NC}\n"
+    printf " ${BLUE}19)Docker监测${NC}        ${BLUE}20)DockerPakNotion${NC}   ${BLUE}21)Dockerweb${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -295,24 +295,24 @@ while true; do
             ;;
         1) execute_basic 1 ;;
         2) execute_basic 2 ;;
-        3) execute_proxy 5 ;;
-        4) execute_tools 5 ;;
-        5) execute_proxy 1 ;;
-        6) execute_monitor 2 ;;
-        7) execute_monitor 6 ;;
-        8) execute_proxy 4 ;;
-        9) execute_tools 1 ;;
-        10) execute_proxy 2 ;;
-        11) execute_monitor 3 ;;
-        12) execute_monitor 4 ;;
-        13) execute_monitor 5 ;;
-        14) execute_proxy 3 ;;
-        15) execute_monitor 1 ;;
-        16) execute_tools 2 ;;
-        17) execute_tools 3 ;;
-        18) execute_tools 4 ;;
-        19) execute_basic 4 ;;
-        20) execute_basic 3 ;;
+        3) execute_tools 5 ;;
+        4) execute_tools 1 ;;
+        5) execute_monitor 3 ;;
+        6) execute_monitor 4 ;;
+        7) execute_monitor 5 ;;
+        8) execute_monitor 1 ;;
+        9) execute_tools 2 ;;
+        10) execute_tools 3 ;;
+        11) execute_tools 4 ;;
+        12) execute_basic 3 ;;
+        13) execute_proxy 5 ;;
+        14) execute_proxy 1 ;;
+        15) execute_monitor 2 ;;
+        16) execute_proxy 4 ;;
+        17) execute_proxy 2 ;;
+        18) execute_proxy 3 ;;
+        19) execute_monitor 6 ;;
+        20) execute_basic 4 ;;
         21) execute_tools 6 ;;
         *)
             echo "无效选项，请重新选择"

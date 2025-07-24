@@ -4,6 +4,7 @@
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+ORANGE='\033[0;33m'
 
 # 显示 LOGO
 show_logo() {
@@ -19,13 +20,13 @@ show_main_menu() {
     show_logo
     echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
-    printf " 01)安装Docker        02)安装1Panel        03)安装TM\n"
-    printf " 04)DockerPakNotion   05)安装3to1          06)Alpine Hy2\n"
-    printf " 07)Serv00 Hy2        08)安装X-UI          09)优选IP\n"
-    printf " 10)哪吒探针          11)清理Nezha         12)Serv00后台\n"
-    printf " 13)流媒体检测        14)Docker监测        15)解压工具\n"
-    printf " 16)Hummingbot        17)查看Sbox链接      18)PM2状态\n"
-    printf " 19)修改系统密码      20)安装H-UI\n"
+    printf " ${GREEN}01)安装Docker${NC}        ${GREEN}02)安装1Panel${NC}        ${ORANGE}03)安装H-UI${NC}\n"
+    printf " ${BLUE}04)修改系统密码${NC}      ${ORANGE}05)安装3to1${NC}          ${ORANGE}06)哪吒探针${NC}\n"
+    printf " ${BLUE}07)Docker监测${NC}        ${ORANGE}08)安装X-UI${NC}          ${GREEN}09)解压工具${NC}\n"
+    printf " ${ORANGE}10)Alpine Hy2${NC}        ${GREEN}11)清理Nezha${NC}         ${GREEN}12)Serv00后台${NC}\n"
+    printf " ${GREEN}13)流媒体检测${NC}        ${ORANGE}14)Serv00 Hy2${NC}        ${GREEN}15)优选IP${NC}\n"
+    printf " ${GREEN}16)Hummingbot${NC}        ${GREEN}17)查看Sbox链接${NC}      ${GREEN}18)PM2状态${NC}\n"
+    printf " ${BLUE}19)DockerPakNotion${NC}   ${GREEN}20)安装TM${NC}      ${BLUE}21)Dockerweb${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -240,6 +241,11 @@ EOF
             echo "已启用 root 登录和密码认证"
             echo "SSH 配置已更新，请尝试使用 root 账户登录"
             ;;
+        6)
+            echo "正在部署 dockerweb..."
+            docker pull jishubia/dockerweb:latest
+            docker run -d --restart=always -p 8976:8976 --name dockerweb jishubia/dockerweb:latest
+            ;;
     esac
 }
 
@@ -281,7 +287,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-20): " choice
+    read -p "请选择操作 (0-21): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -289,24 +295,25 @@ while true; do
             ;;
         1) execute_basic 1 ;;
         2) execute_basic 2 ;;
-        3) execute_basic 3 ;;
-        4) execute_basic 4 ;;
+        3) execute_proxy 5 ;;
+        4) execute_tools 5 ;;
         5) execute_proxy 1 ;;
-        6) execute_proxy 2 ;;
-        7) execute_proxy 3 ;;
+        6) execute_monitor 2 ;;
+        7) execute_monitor 6 ;;
         8) execute_proxy 4 ;;
-        9) execute_monitor 1 ;;
-        10) execute_monitor 2 ;;
+        9) execute_tools 1 ;;
+        10) execute_proxy 2 ;;
         11) execute_monitor 3 ;;
         12) execute_monitor 4 ;;
         13) execute_monitor 5 ;;
-        14) execute_monitor 6 ;;
-        15) execute_tools 1 ;;
+        14) execute_proxy 3 ;;
+        15) execute_monitor 1 ;;
         16) execute_tools 2 ;;
         17) execute_tools 3 ;;
         18) execute_tools 4 ;;
-        19) execute_tools 5 ;;
-        20) execute_proxy 5 ;;
+        19) execute_basic 4 ;;
+        20) execute_basic 3 ;;
+        21) execute_tools 6 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

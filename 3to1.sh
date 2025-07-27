@@ -111,17 +111,18 @@ install_pkgs() {
   done
 }
 install_shortcut() {
-  # Get the current script path
-  SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+  # Copy the current script to a fixed location for future use
+  cp "$0" /root/sbox/3to1_main.sh
+  chmod +x /root/sbox/3to1_main.sh
   
-  cat > /root/sbox/nowhash.sh << EOF
+  cat > /root/sbox/nowhash.sh << 'EOF'
 #!/usr/bin/env bash
 if [ -f "/root/sbox/config" ]; then
     # Show the menu for already installed system
-    bash "$SCRIPT_PATH" menu
+    bash /root/sbox/3to1_main.sh menu
 else
     # Run installation
-    bash "$SCRIPT_PATH"
+    bash /root/sbox/3to1_main.sh
 fi
 EOF
   chmod +x /root/sbox/nowhash.sh

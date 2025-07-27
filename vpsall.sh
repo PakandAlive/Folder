@@ -27,6 +27,7 @@ show_main_menu() {
     printf " ${ORANGE}13)安装H-UI${NC}          ${ORANGE}14)安装3to1${NC}          ${ORANGE}15)哪吒探针${NC}\n"
     printf " ${ORANGE}16)安装X-UI${NC}          ${ORANGE}17)Alpine Hy2${NC}        ${ORANGE}18)Serv00 Hy2${NC}\n"
     printf " ${BLUE}19)Docker监测${NC}        ${BLUE}20)DockerPakNotion${NC}   ${BLUE}21)Dockerweb${NC}\n"
+    printf " ${BLUE}22)OKXBot${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -246,6 +247,17 @@ EOF
             docker pull jishubia/dockerweb:latest
             docker run -d --restart=always -p 8976:8976 --name dockerweb jishubia/dockerweb:latest
             ;;
+        7)
+            echo "正在部署 OKXBot..."
+            docker pull jishubia/okxdatapushbot:latest
+            docker run -d \
+              --name crypto-monitor-bot \
+              --restart unless-stopped \
+              -e TZ=Asia/Shanghai \
+              -v /etc/localtime:/etc/localtime:ro \
+              jishubia/okxdatapushbot:latest
+            echo "OKXBot 已部署完成！"
+            ;;
     esac
 }
 
@@ -287,7 +299,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-21): " choice
+    read -p "请选择操作 (0-22): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -314,6 +326,7 @@ while true; do
         19) execute_monitor 6 ;;
         20) execute_basic 4 ;;
         21) execute_tools 6 ;;
+        22) execute_tools 7 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

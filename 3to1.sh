@@ -111,12 +111,17 @@ install_pkgs() {
   done
 }
 install_shortcut() {
-  cat > /root/sbox/nowhash.sh << 'EOF'
+  # Get the current script path
+  SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+  
+  cat > /root/sbox/nowhash.sh << EOF
 #!/usr/bin/env bash
 if [ -f "/root/sbox/config" ]; then
-    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh) menu
+    # Show the menu for already installed system
+    bash "$SCRIPT_PATH" menu
 else
-    bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+    # Run installation
+    bash "$SCRIPT_PATH"
 fi
 EOF
   chmod +x /root/sbox/nowhash.sh
@@ -1004,6 +1009,80 @@ disable_hy2hopping(){
   sed -i "s/HY_HOPPING='TRUE'/HY_HOPPING=FALSE/" /root/sbox/config
 }
 
+# Check if script is called with 'menu' parameter to show management interface
+if [ "$1" = "menu" ]; then
+    # 直接显示管理菜单，跳过安装逻辑
+    if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/nowhash.sh" ] && [ -f "/usr/bin/nowhash" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
+        echo ""
+        warning "sing-box-reality-hysteria2管理菜单"
+        show_status
+        warning "请选择选项:"
+        echo ""
+        info "1. 重新安装"
+        info "2. 修改配置"
+        info "3. 显示客户端配置"
+        info "4. sing-box基础操作"
+        info "5. 一键开启bbr"
+        info "6. warp解锁操作"
+        info "7. hysteria2端口跳跃"
+        info "8. 重启argo隧道"
+        info "0. 卸载"
+        hint "========================="
+        echo ""
+        read -p "请输入对应数字 (0-8): " choice
+
+        case $choice in
+          1)
+              uninstall_singbox
+            ;;
+          2)
+              #修改sb
+              modify_singbox
+              show_client_configuration
+              exit 0
+            ;;
+          3)  
+              show_client_configuration
+              exit 0
+          ;;	
+          4)  
+              process_singbox
+              exit 0
+              ;;
+          5)
+              enable_bbr
+              exit 0
+              ;;
+          6)
+              process_warp
+              exit 0
+              ;;
+          7)
+              process_hy2hopping
+              exit 0
+              ;;
+          8)
+              systemctl stop argo
+              systemctl start argo
+              echo "重新启动完成，查看新的客户端信息"
+              show_client_configuration
+              exit 0
+              ;;
+          0)
+              uninstall_singbox
+	            exit 0
+              ;;
+          *)
+              echo "Invalid choice. Exiting."
+              exit 1
+              ;;
+        esac
+    else
+        error "sing-box 未正确安装，请先运行安装脚本"
+    fi
+    exit 0
+fi
+
 # 作者介绍
 print_with_delay "PakandAlive" 0.03
 echo ""
@@ -1050,7 +1129,6 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
       5)
           enable_bbr
-          nowhash
           exit 0
           ;;
       6)

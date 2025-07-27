@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# ============================================================================
+# ALL FUNCTION DEFINITIONS - MUST BE AT THE TOP
+# ============================================================================
+
 # delay print
 print_with_delay() {
     text="$1"
@@ -10,6 +14,7 @@ print_with_delay() {
     done
     echo
 }
+
 # colorful text
 warning() { echo -e "\033[31m\033[01m$*\033[0m"; }  # 红色
 error() { echo -e "\033[31m\033[01m$*\033[0m" && exit 1; } # 红色

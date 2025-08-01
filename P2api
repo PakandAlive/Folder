@@ -1,0 +1,474 @@
+import {
+  Application,
+  isHttpError,
+  Router,
+  Status,
+  Context,
+} from "jsr:@oak/oak@^16.1.0";
+import { DatabaseSync } from "node:sqlite";
+
+// --- Constants ---
+const POLLINATIONS_URL = "https://text.pollinations.ai/openai";
+const POLLINATIONS_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0",
+  "Accept": "*/*", "Accept-Language": "en-US,en;q=0.5",
+  "Referer": "https://ish.junioralive.in/", "Content-Type": "application/json",
+  "Origin": "https://ish.junioralive.in", "DNT": "1", "Sec-GPC": "1",
+  "Connection": "keep-alive", "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "cross-site",
+};
+const MODEL_MAPPING: { [key: string]: string } = {
+  "grok-3-mini": "grok",
+  "deepseek-r1": "deepseek-reasoning",
+  "gpt-4o-mini": "openai",
+  "gpt-4.1": "openai-large",
+};
+const AVAILABLE_V1_MODELS = Object.keys(MODEL_MAPPING);
+const DB_FILE = "stat.db";
+
+// --- Database Class ---
+class StatisticsDB {
+  private db: DatabaseSync;
+
+  constructor(path: string) {
+    this.db = new DatabaseSync(path);
+    this.init();
+  }
+
+  private init() {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp INTEGER NOT NULL,
+        ip TEXT NOT NULL,
+        path TEXT NOT NULL,
+        status_code INTEGER NOT NULL,
+        is_chat_completion INTEGER DEFAULT 0,
+        model TEXT,
+        prompt_tokens INTEGER DEFAULT 0,
+        completion_tokens INTEGER DEFAULT 0
+      );
+    `);
+    console.log("Database initialized using node:sqlite.");
+  }
+
+  public logRequest(data: {
+    ip: string;
+    path: string;
+    statusCode: number;
+    isChat?: boolean;
+    model?: string;
+    promptTokens?: number;
+    completionTokens?: number;
+  }) {
+    try {
+      this.db.prepare(
+        `INSERT INTO requests (timestamp, ip, path, status_code, is_chat_completion, model, prompt_tokens, completion_tokens)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+          Math.floor(Date.now() / 1000),
+          data.ip,
+          data.path,
+          data.statusCode,
+          data.isChat ? 1 : 0,
+          data.model ?? null,
+          data.promptTokens ?? 0,
+          data.completionTokens ?? 0,
+      );
+    } catch (err) {
+        console.error("DB Write Error:", err);
+    }
+  }
+  
+  public getDashboardStats(since: number) {
+    const totalReqs = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE (status_code < 400 OR status_code >= 500) AND timestamp >= ?`).get(since) as { count: number };
+    const totalErrors = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE status_code >= 500 AND timestamp >= ?`).get(since) as { count: number };
+    const totalChatCompletions = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE is_chat_completion = 1 AND timestamp >= ?`).get(since) as { count: number };
+    const modelListings = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE path = '/api/v1/models' AND timestamp >= ?`).get(since) as { count: number };
+    const tokenStats = this.db.prepare(`SELECT SUM(prompt_tokens) as prompt, SUM(completion_tokens) as completion, SUM(prompt_tokens + completion_tokens) as total FROM requests WHERE is_chat_completion = 1 AND timestamp >= ?`).get(since) as { prompt: number | null, completion: number | null, total: number | null };
+    const timeRange = this.db.prepare(`SELECT MIN(timestamp) as first, MAX(timestamp) as last FROM requests WHERE is_chat_completion = 1 AND timestamp >= ?`).get(since) as { first: number | null, last: number | null };
+    const fiveMinAgo = Math.floor(Date.now() / 1000) - 300;
+    const recentErrors = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE status_code >= 500 AND timestamp >= ?`).get(fiveMinAgo) as { count: number };
+    const recentTotal = this.db.prepare(`SELECT COUNT(*) as count FROM requests WHERE (status_code < 400 OR status_code >= 500) AND timestamp >= ?`).get(fiveMinAgo) as { count: number };
+    return {
+        totalRequests: totalReqs.count,
+        totalErrors: totalErrors.count,
+        totalChatCompletions: totalChatCompletions.count,
+        totalModelListings: modelListings.count,
+        promptTokens: tokenStats.prompt ?? 0,
+        completionTokens: tokenStats.completion ?? 0,
+        totalTokens: tokenStats.total ?? 0,
+        firstRequestTime: timeRange.first,
+        lastRequestTime: timeRange.last,
+        recentErrorCount: recentErrors.count,
+        recentTotalCount: recentTotal.count,
+    };
+  }
+  
+  public getIpLeaderboards(since: number) {
+      const byRequest = this.db.prepare(`SELECT ip, COUNT(*) as count FROM requests WHERE is_chat_completion = 1 AND timestamp >= ? GROUP BY ip ORDER BY count DESC LIMIT 20`).all(since);
+      const byTotalTokens = this.db.prepare(`SELECT ip, SUM(prompt_tokens + completion_tokens) as tokens FROM requests WHERE is_chat_completion = 1 AND timestamp >= ? GROUP BY ip ORDER BY tokens DESC LIMIT 30`).all(since);
+      const byPromptTokens = this.db.prepare(`SELECT ip, SUM(prompt_tokens) as tokens FROM requests WHERE is_chat_completion = 1 AND timestamp >= ? GROUP BY ip ORDER BY tokens DESC LIMIT 30`).all(since);
+      const byCompletionTokens = this.db.prepare(`SELECT ip, SUM(completion_tokens) as tokens FROM requests WHERE is_chat_completion = 1 AND timestamp >= ? GROUP BY ip ORDER BY tokens DESC LIMIT 30`).all(since);
+      return { byRequest, byTotalTokens, byPromptTokens, byCompletionTokens };
+  }
+  
+  public getChatTrendData(metric: 'requests' | 'total_tokens' | 'prompt_tokens' | 'completion_tokens', since: number, groupBy: 'minute' | 'hour' | 'day') {
+    const format = { minute: '%Y-%m-%d %H:%M', hour: '%Y-%m-%d %H:00', day: '%Y-%m-%d' }[groupBy];
+    let selectClause: string;
+    switch (metric) {
+        case 'total_tokens': selectClause = 'SUM(prompt_tokens + completion_tokens) as value'; break;
+        case 'prompt_tokens': selectClause = 'SUM(prompt_tokens) as value'; break;
+        case 'completion_tokens': selectClause = 'SUM(completion_tokens) as value'; break;
+        default: selectClause = 'COUNT(*) as value'; break;
+    }
+    const results = this.db.prepare(
+       `SELECT strftime(?, timestamp, 'unixepoch') as label, ${selectClause} FROM requests WHERE is_chat_completion = 1 AND timestamp >= ? GROUP BY label ORDER BY timestamp`
+    ).all(format, since) as { label: string, value: number }[];
+    return results.map(row => ({ label: row.label, value: row.value ?? 0 }));
+  }
+
+  public close() {
+    this.db.close();
+  }
+}
+
+// --- App Initialization ---
+const db = new StatisticsDB(DB_FILE);
+const app = new Application();
+const router = new Router();
+
+// --- Middleware ---
+app.use(async (ctx, next) => {
+  try {
+    await next();
+  } catch (err) {
+    if (isHttpError(err)) {
+      ctx.response.status = err.status;
+      ctx.response.body = { error: err.message };
+    } else {
+      console.error("Internal Server Error:", err);
+      ctx.response.status = Status.InternalServerError;
+      ctx.response.body = { error: "Internal Server Error", message: err.message };
+    }
+  }
+});
+
+// Fixed IP detection function
+function getClientIp(ctx: Context): string {
+    const headers = ctx.request.headers;
+    // Prefer the Cloudflare header
+    const cfIp = headers.get("cf-connecting-ip");
+    if (cfIp) return cfIp;
+
+    // Fallback to X-Forwarded-For
+    const xff = headers.get("x-forwarded-for");
+    if (xff) return xff.split(',')[0].trim();
+
+    // Use X-Real-IP
+    const realIp = headers.get("x-real-ip");
+    if (realIp) return realIp;
+
+    // Fallback to localhost if all else fails
+    return "127.0.0.1";
+}
+
+app.use(async (ctx, next) => {
+  await next();
+  const chatData = ctx.state.chatCompletionData as { model: string; promptTokens: number; completionTokens: number; } | undefined;
+  
+  const clientIp = getClientIp(ctx);
+
+  db.logRequest({
+    ip: clientIp,
+    path: ctx.request.url.pathname,
+    statusCode: ctx.response.status,
+    isChat: !!chatData,
+    model: chatData?.model,
+    promptTokens: chatData?.promptTokens,
+    completionTokens: chatData?.completionTokens
+  });
+  console.log(`${ctx.request.method} ${ctx.request.url.pathname} - ${ctx.response.status} from ${clientIp}`);
+});
+
+// --- Helper Functions ---
+function handleHiShortcut(ctx: Context, messages: any[], stream: boolean): boolean {
+  if (messages?.length === 1 && messages[0].role === "user" && messages[0].content === "hi") {
+    const fixedContent = "Hey! What's up?";
+    if (stream) {
+      ctx.response.headers.set("Content-Type", "text/event-stream");
+      const ssePayload = { id: `chatcmpl-fixed-${crypto.randomUUID()}`, object: "chat.completion.chunk", created: Math.floor(Date.now() / 1000), model: "gpt-4.1", choices: [{ index: 0, delta: { content: fixedContent }, finish_reason: null }] };
+      ctx.response.body = `data: ${JSON.stringify(ssePayload)}\n\ndata: [DONE]\n\n`;
+    } else {
+      ctx.response.body = { id: `chatcmpl-fixed-${crypto.randomUUID()}`, object: "chat.completion", created: Math.floor(Date.now() / 1000), model: "gpt-4.1", choices: [{ index: 0, message: { role: "assistant", content: fixedContent }, finish_reason: "stop" }], usage: { prompt_tokens: 1, completion_tokens: 4, total_tokens: 5 } };
+    }
+    ctx.state.chatCompletionData = { model: 'gpt-4.1-shortcut', promptTokens: 1, completionTokens: 4 };
+    return true;
+  }
+  return false;
+}
+
+function estimateTokens(text: string): number {
+    if (!text) return 0;
+    return Math.ceil(text.length / 4);
+}
+
+async function proxyOpenAIChatCompletion(ctx: Context, requestBody: any, upstreamModel: string) {
+  const { messages, max_tokens, temperature, stream } = requestBody;
+  const timeString = new Date().toISOString();
+  const systemContent = `\n\nThe time now in UTC is: ${timeString}\nDon't volunteer to bring up the above information unless it fits the context well enough.`;
+  const modifiedMessages = JSON.parse(JSON.stringify(messages));
+  const lastMessage = modifiedMessages[modifiedMessages.length - 1];
+  if (lastMessage && lastMessage.content) { lastMessage.content += systemContent; }
+  const payload = { model: upstreamModel, messages: modifiedMessages, max_tokens, temperature: temperature ?? 1, stream: stream ?? false };
+  const pollResponse = await fetch(POLLINATIONS_URL, { method: "POST", headers: POLLINATIONS_HEADERS, body: JSON.stringify(payload) });
+  
+  if (!pollResponse.ok) {
+    ctx.response.status = pollResponse.status;
+    const errorBodyText = await pollResponse.text();
+    try { ctx.response.body = JSON.parse(errorBodyText); }
+    catch { ctx.response.body = { error: "Upstream API Error", details: errorBodyText }; }
+    return;
+  }
+  
+  const promptTokens = estimateTokens(JSON.stringify(modifiedMessages));
+  let completionTokens = 0;
+  if (stream) {
+    ctx.response.headers.set("Content-Type", "text/event-stream");
+    ctx.response.headers.set("Connection", "keep-alive");
+    ctx.response.headers.set("Cache-Control", "no-cache");
+    ctx.response.body = pollResponse.body;
+  } else {
+    const pollData = await pollResponse.json();
+    const content = pollData?.choices?.[0]?.message?.content ?? "";
+    completionTokens = estimateTokens(content);
+    ctx.response.body = { id: `chatcmpl-${crypto.randomUUID()}`, object: "chat.completion", created: Math.floor(Date.now() / 1000), model: requestBody.model, choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }], usage: { prompt_tokens: promptTokens, completion_tokens: completionTokens, total_tokens: promptTokens + completionTokens } };
+  }
+  ctx.state.chatCompletionData = { model: requestBody.model, promptTokens, completionTokens };
+}
+
+// --- Route Handlers ---
+const handleV1ChatCompletion = async (ctx: Context) => {
+  const requestBody = await ctx.request.body.json();
+  const { messages, model, stream } = requestBody;
+  if (!messages || !Array.isArray(messages) || messages.length === 0) { ctx.throw(Status.BadRequest, "Missing or invalid 'messages' field."); }
+  if (handleHiShortcut(ctx, messages, stream ?? false)) return;
+  const upstreamModel = MODEL_MAPPING[model];
+  if (!upstreamModel) { ctx.throw(Status.BadRequest, `Model not supported. Use: ${AVAILABLE_V1_MODELS.join(", ")}`); }
+  await proxyOpenAIChatCompletion(ctx, requestBody, upstreamModel);
+};
+
+const handleLayersChatCompletion = async (ctx: Context) => {
+  const requestBody = await ctx.request.body.json();
+  const { messages, stream } = requestBody;
+  if (!messages || !Array.isArray(messages) || messages.length === 0) { ctx.throw(Status.BadRequest, "Missing or invalid 'messages' field."); }
+  if (handleHiShortcut(ctx, messages, stream ?? false)) return;
+  await proxyOpenAIChatCompletion(ctx, requestBody, "openai-large");
+};
+
+const handleModelsList = (ctx: Context) => {
+  const modelsData = AVAILABLE_V1_MODELS.map(modelId => ({ id: modelId, object: "model", created: Math.floor(Date.now() / 1000), owned_by: "user" }));
+  ctx.response.body = { object: "list", data: modelsData };
+};
+
+const handleDashboard = (ctx: Context) => {
+    const range = ctx.request.url.searchParams.get("range") || "24h";
+    let since = Math.floor(Date.now() / 1000) - 24 * 3600;
+    let groupBy: 'minute' | 'hour' | 'day' = 'hour';
+    let rangeLabel = "最近24小时";
+    if (range === "7d") { since = Math.floor(Date.now() / 1000) - 7 * 24 * 3600; groupBy = 'day'; rangeLabel = "最近7天"; }
+    else if (range === "30d") { since = Math.floor(Date.now() / 1000) - 30 * 24 * 3600; groupBy = 'day'; rangeLabel = "最近30天"; }
+    else if (range === "all") { since = 0; groupBy = 'day'; rangeLabel = "全部时间"; }
+
+    const stats = db.getDashboardStats(since);
+    const leaderboards = db.getIpLeaderboards(since);
+    const chartDataSets = {
+        requests: db.getChatTrendData('requests', since, groupBy),
+        total_tokens: db.getChatTrendData('total_tokens', since, groupBy),
+        prompt_tokens: db.getChatTrendData('prompt_tokens', since, groupBy),
+        completion_tokens: db.getChatTrendData('completion_tokens', since, groupBy),
+    };
+    const errorRate = stats.totalRequests > 0 ? (stats.totalErrors / stats.totalRequests * 100).toFixed(2) : "0.00";
+    const fiveMinErrorRate = stats.recentTotalCount > 0 ? (stats.recentErrorCount / stats.recentTotalCount * 100).toFixed(2) : "0.00";
+    let rpm = 0, tpm = 0;
+    if (stats.firstRequestTime && stats.lastRequestTime && stats.totalChatCompletions > 0) {
+        const durationMinutes = Math.max(1, (stats.lastRequestTime - stats.firstRequestTime)) / 60;
+        rpm = parseFloat((stats.totalChatCompletions / durationMinutes).toFixed(2));
+        tpm = parseFloat((stats.totalTokens / durationMinutes).toFixed(2));
+    }
+    ctx.response.headers.set("Content-Type", "text/html; charset=utf-8");
+    ctx.response.body = generateDashboardHTML({ stats, leaderboards, chartDataSets, errorRate, fiveMinErrorRate, rpm, tpm, range, rangeLabel });
+};
+
+// --- Routes ---
+router
+  .get("/", handleDashboard)
+  .get("/api/v1/models", handleModelsList)
+  .post("/api/v1/chat/completions", handleV1ChatCompletion)
+  .post("/api/layers/openai/:splat*", handleLayersChatCompletion);
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+// --- Server Start ---
+const port = 8031;
+console.log(`Server listening on http://0.0.0.0:${port}`);
+console.log(`Dashboard available at http://0.0.0.0:${port}/`);
+await app.listen({ hostname: "0.0.0.0", port });
+Deno.addSignalListener("SIGINT", () => {
+    console.log("\nClosing database connection...");
+    db.close();
+    Deno.exit();
+});
+
+// --- HTML Generation ---
+function generateDashboardHTML(data: any): string {
+    const { stats, leaderboards, chartDataSets, errorRate, fiveMinErrorRate, rpm, tpm, range, rangeLabel } = data;
+    
+    const renderTable = (title: string, rows: any[], col1: string, col2: string) => `
+        <div class="table-container">
+            <h3>${title}</h3>
+            <table>
+                <thead><tr><th>${col1}</th><th>${col2}</th></tr></thead>
+                <tbody>
+                    ${(rows || []).map((row: any) => `<tr><td>${row.ip}</td><td>${(row.count ?? row.tokens).toLocaleString()}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI API 代理监控面板</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; margin: 0; background-color: #f8f9fa; color: #343a40; }
+            .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+            header { border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+            h1 { margin: 0; color: #007bff; }
+            h2 { color: #495057; border-bottom: 1px solid #e9ecef; padding-bottom: 8px; margin-top: 2.5rem; }
+            .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+            .stat-card { background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; transition: all 0.2s ease-in-out; }
+            .stat-card h4 { margin: 0 0 10px; color: #6c757d; text-transform: uppercase; font-size: 14px; }
+            .stat-card p { margin: 0; font-size: 28px; font-weight: 500; color: #007bff; }
+            .clickable-card { cursor: pointer; }
+            .clickable-card:hover { background-color: #f1f3f5; }
+            .clickable-card.active { background-color: #e7f5ff; border-color: #90cfff; }
+            .leaderboards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+            .table-container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e9ecef; }
+            th { color: #495057; background-color: #f8f9fa; }
+            tbody tr:last-child td { border-bottom: none; }
+            .range-selector a { text-decoration: none; color: #007bff; background: #e9ecef; padding: 8px 12px; border-radius: 5px; margin-left: 5px; font-size: 14px; }
+            .range-selector a.active { background-color: #007bff; color: #fff; }
+            .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; background-color: #28a745; }
+            .info-box { background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+            .info-box h3 { margin: 0 0 10px 0; color: #0066cc; }
+            .api-endpoint { font-family: 'Courier New', monospace; background-color: #f8f9fa; padding: 5px 8px; border-radius: 4px; font-size: 14px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <div>
+                    <h1>🚀 AI API 代理监控面板</h1>
+                    <span class="status-badge">运行中</span>
+                </div>
+                <div class="range-selector">
+                    <strong>时间范围:</strong>
+                    <a href="/?range=24h" class="${range === '24h' ? 'active' : ''}">24小时</a>
+                    <a href="/?range=7d" class="${range === '7d' ? 'active' : ''}">7天</a>
+                    <a href="/?range=30d" class="${range === '30d' ? 'active' : ''}">30天</a>
+                    <a href="/?range=all" class="${range === 'all' ? 'active' : ''}">全部</a>
+                </div>
+            </header>
+
+            <div class="info-box">
+                <h3>📖 API 使用说明</h3>
+                <p><strong>聊天接口:</strong> <span class="api-endpoint">POST http://34.80.246.227:8031/api/v1/chat/completions</span></p>
+                <p><strong>模型列表:</strong> <span class="api-endpoint">GET http://34.80.246.227:8031/api/v1/models</span></p>
+                <p><strong>支持模型:</strong> grok-3-mini, deepseek-r1, gpt-4o-mini, gpt-4.1</p>
+                <p><strong>特色:</strong> 🆓 免费使用 | 🔒 无需API密钥 | 📊 实时监控</p>
+            </div>
+
+            <h2>📊 总体统计 (${rangeLabel})</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><h4>API 总请求数</h4><p>${stats.totalRequests.toLocaleString()}</p></div>
+                <div class="stat-card"><h4>模型列表查询</h4><p>${stats.totalModelListings.toLocaleString()}</p></div>
+                <div class="stat-card"><h4>服务器错误数</h4><p>${stats.totalErrors.toLocaleString()}</p></div>
+               <div class="stat-card"><h4>错误率</h4><p>${errorRate}%</p></div>
+                <div class="stat-card"><h4>5分钟错误率</h4><p>${fiveMinErrorRate}%</p></div>
+            </div>
+
+            <h2>💬 聊天完成统计 (${rangeLabel})</h2>
+            <div class="stats-grid">
+                <div class="stat-card clickable-card" data-metric="requests"><h4>聊天请求数</h4><p>${stats.totalChatCompletions.toLocaleString()}</p></div>
+                <div class="stat-card clickable-card" data-metric="total_tokens"><h4>总 Token 数</h4><p>${stats.totalTokens.toLocaleString()}</p></div>
+                <div class="stat-card clickable-card" data-metric="prompt_tokens"><h4>输入 Token 数</h4><p>${stats.promptTokens.toLocaleString()}</p></div>
+                <div class="stat-card clickable-card" data-metric="completion_tokens"><h4>输出 Token 数</h4><p>${stats.completionTokens.toLocaleString()}</p></div>
+                <div class="stat-card"><h4>平均 RPM</h4><p>${rpm.toLocaleString()}</p></div>
+                <div class="stat-card"><h4>平均 TPM</h4><p>${tpm.toLocaleString()}</p></div>
+            </div>
+            
+            <div style="margin-top: 2rem; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <canvas id="chatChart"></canvas>
+            </div>
+
+            <h2>🏆 IP 使用排行榜 (${rangeLabel})</h2>
+            <div class="leaderboards">
+                ${renderTable('聊天请求数 TOP 20', leaderboards.byRequest, 'IP 地址', '请求数')}
+                ${renderTable('总 Token 使用量 TOP 30', leaderboards.byTotalTokens, 'IP 地址', 'Token 数')}
+                ${renderTable('输入 Token 使用量 TOP 30', leaderboards.byPromptTokens, 'IP 地址', 'Token 数')}
+                ${renderTable('输出 Token 使用量 TOP 30', leaderboards.byCompletionTokens, 'IP 地址', 'Token 数')}
+            </div>
+
+            <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e9ecef; text-align: center; color: #6c757d;">
+                <p>🤖 AI API 代理服务 | 基于 Deno + Oak 构建 | 数据来源: Pollinations AI</p>
+            </footer>
+        </div>
+
+        <script>
+            const chartDataSets = ${JSON.stringify(chartDataSets)};
+            const chartCanvas = document.getElementById('chatChart').getContext('2d');
+            const clickableCards = document.querySelectorAll('.clickable-card');
+            const chart = new Chart(chartCanvas, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: '', data: [], borderColor: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.1)', borderWidth: 2, tension: 0.1, fill: true }] },
+                options: { 
+                    scales: { y: { beginAtZero: true } }, 
+                    plugins: { 
+                        legend: { display: true },
+                        title: { display: true, text: '使用趋势图表' }
+                    }, 
+                    responsive: true, 
+                    maintainAspectRatio: true 
+                }
+            });
+            function updateChart(metric) {
+                const dataSet = chartDataSets[metric];
+                const card = document.querySelector(\`.clickable-card[data-metric="\${metric}"]\`);
+                const label = card.querySelector('h4').textContent;
+                chart.data.labels = dataSet.map(d => d.label);
+                chart.data.datasets[0].data = dataSet.map(d => d.value);
+                chart.data.datasets[0].label = label + ' 趋势';
+                chart.update();
+                clickableCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            }
+            clickableCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const metric = card.dataset.metric;
+                    updateChart(metric);
+                });
+            });
+            updateChart('requests');
+        </script>
+    </body>
+    </html>
+    `;
+}

@@ -27,7 +27,7 @@ show_main_menu() {
     printf " ${ORANGE}13)安装H-UI${NC}          ${ORANGE}14)安装3to1${NC}          ${ORANGE}15)哪吒探针${NC}\n"
     printf " ${ORANGE}16)安装X-UI${NC}          ${ORANGE}17)Alpine Hy2${NC}        ${ORANGE}18)Serv00 Hy2${NC}\n"
     printf " ${BLUE}19)Docker监测${NC}        ${BLUE}20)DockerPakNotion${NC}   ${BLUE}21)Dockerweb${NC}\n"
-    printf " ${BLUE}22)OKXBot${NC}\n"
+    printf " ${BLUE}22)OKXBot${NC}            ${BLUE}23)0xfuckNotion${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -43,6 +43,7 @@ show_basic_menu() {
     echo "2) 安装 1Panel"
     echo "3) 安装 TM"
     echo "4) DockerPakNotion"
+    echo "5) 0xfuckNotion"
     echo ""
     echo "0) 返回主菜单"
     echo "------------------------"
@@ -104,6 +105,23 @@ execute_basic() {
         4)
             echo "DockerPakNotio..."
             docker run -d -p 6006:3000 --name paknotion -e NOTION_PAGE_ID=15fa1a77778a809d9d9ddd97f9d9f13d jishubia/paknotion
+            ;;
+        5)
+            echo "正在部署 0xfuckNotion..."
+            docker run -d \
+              --name 0xfucknotion \
+              -p 8020:8020 \
+              --restart unless-stopped \
+              -e NODE_ENV=production \
+              -e PORT=8020 \
+              -e NEXT_TELEMETRY_DISABLED=1 \
+              --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8020/ || exit 1" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=3 \
+              --health-start-period=40s \
+              jishubia/0xfucknotion:latest
+            echo "0xfuckNotion 已部署完成！"
             ;;
     esac
 }
@@ -269,7 +287,7 @@ handle_submenu() {
         case $menu_type in
             1)
                 show_basic_menu
-                read -p "请选择操作 (0-4): " choice
+                read -p "请选择操作 (0-5): " choice
                 if [ "$choice" = "0" ]; then
                     break
                 fi
@@ -299,7 +317,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-22): " choice
+    read -p "请选择操作 (0-23): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -327,6 +345,7 @@ while true; do
         20) execute_basic 4 ;;
         21) execute_tools 6 ;;
         22) execute_tools 7 ;;
+        23) execute_basic 5 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

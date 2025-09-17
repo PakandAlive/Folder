@@ -3,6 +3,8 @@ DOMAIN, verify.walletconnect.org
 DOMAIN, api.onesignal.com
 DOMAIN, api.eu.amplitude.com
 DOMAIN, firebase-settings.crashlytics.com
-DOMAIN-SUFFIX, walletconnect.com
 DOMAIN, qk5kuu8r-ios.mobile-messenger.eu.intercom.io
 DOMAIN, b2b-card-security.wirexapp.com
+DOMAIN, production.cash-api.aws.ether.fi
+DOMAIN-SUFFIX, walletconnect.org
+DOMAIN-SUFFIX, walletconnect.com

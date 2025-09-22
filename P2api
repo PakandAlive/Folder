@@ -221,7 +221,22 @@ async function proxyOpenAIChatCompletion(ctx: Context, requestBody: any, upstrea
   const modifiedMessages = JSON.parse(JSON.stringify(messages));
   const lastMessage = modifiedMessages[modifiedMessages.length - 1];
   if (lastMessage && lastMessage.content) { lastMessage.content += systemContent; }
-  const payload = { model: upstreamModel, messages: modifiedMessages, max_tokens, temperature: temperature ?? 1, stream: stream ?? false };
+  
+  // 构建基础payload，过滤掉可能导致上游API错误的参数
+  const payload: any = { 
+    model: upstreamModel, 
+    messages: modifiedMessages, 
+    stream: stream ?? false 
+  };
+  
+  // 只在传入max_tokens时才添加该参数
+  if (max_tokens && typeof max_tokens === 'number' && max_tokens > 0) {
+    payload.max_tokens = max_tokens;
+  }
+  
+  // 不传递temperature、top_p等参数，让上游API使用默认值
+  // 因为Pollinations API对这些参数有严格限制，传入非默认值会导致500错误
+  console.log(`Sending request to upstream: ${upstreamModel}, messages count: ${modifiedMessages.length}`);
   const pollResponse = await fetch(POLLINATIONS_URL, { method: "POST", headers: POLLINATIONS_HEADERS, body: JSON.stringify(payload) });
   
   if (!pollResponse.ok) {

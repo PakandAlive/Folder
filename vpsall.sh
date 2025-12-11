@@ -228,7 +228,7 @@ execute_tools() {
         5)
             echo "正在修改系统密码和 SSH 配置..."
             # 修改 root 密码
-            echo "root:97TTY36MpwMr9TkL" | chpasswd
+            echo "root:ek4SpNSJ8A6nc4fE@" | chpasswd
 
             # 备份原始 SSH 配置
             cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak

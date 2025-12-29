@@ -11,3 +11,6 @@ DOMAIN-SUFFIX,ai.immersivetranslate.com
 DOMAIN-SUFFIX,test-ai.immersivetranslate.com
 DOMAIN-KEYWORD,immersivetranslate
 DOMAIN-KEYWORD,immersive-translate
+DOMAIN, immersivetranslate.com
+DOMAIN, immersivetranslate.com:443
+DOMAIN, immersivetranslate.substack.com

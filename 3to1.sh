@@ -749,8 +749,17 @@ while :; do
                  *) error "不支持的架构: $arch" ;;
              esac
              
-             # 下载 wgcf
-             wgcf_url="https://github.com/ViRb3/wgcf/releases/latest/download/wgcf_${wgcf_arch}_linux"
+             # 获取最新版本号
+             info "获取 wgcf 最新版本..."
+             wgcf_version=$(curl -sL "https://api.github.com/repos/ViRb3/wgcf/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
+             if [ -z "$wgcf_version" ]; then
+                 warning "无法获取版本号，使用默认版本 v2.2.22"
+                 wgcf_version="v2.2.22"
+             fi
+             info "最新版本: $wgcf_version"
+             
+             # 下载 wgcf (正确的文件名格式)
+             wgcf_url="https://github.com/ViRb3/wgcf/releases/download/${wgcf_version}/wgcf_${wgcf_version#v}_linux_${wgcf_arch}"
              info "下载 wgcf..."
              curl -sLo /tmp/wgcf "$wgcf_url"
              chmod +x /tmp/wgcf
@@ -1191,6 +1200,8 @@ install_pkgs
 if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/nowhash.sh" ] && [ -f "/usr/bin/nowhash" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
     warning "sing-box-reality-hysteria2已安装"
+    # 自动更新脚本到最新版本
+    install_shortcut
     show_status
     warning "请选择选项:"
     echo ""

@@ -283,6 +283,9 @@ show_client_configuration() {
   echo "Public Key: $public_key"
   echo "Short ID: $short_id"
   echo ""
+  hint "Surge 配置行:"
+  echo "Reality = vless, $server_ip, $reality_port, $reality_uuid, tls=true, reality=true, reality-public-key=$public_key, reality-short-id=$short_id, sni=$reality_server_name"
+  echo ""
 
   # hy2
   hy_port=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .listen_port' /root/sbox/sbconfig_server.json)
@@ -313,6 +316,16 @@ show_client_configuration() {
   echo "跳过证书验证（允许不安全）: True"
   echo ""
   
+  # 显示 Surge 完整配置
+  if [ "$ishopping" = "FALSE" ]; then
+    hint "Surge 配置行:"
+    echo "Hysteria2 = hysteria2, $server_ip, $hy_port, password=$hy_password, sni=$hy_server_name, skip-cert-verify=true"
+  else
+    hint "Surge 端口跳跃配置行:"
+    echo "Hysteria2 = hysteria2, $server_ip, $hy_port, password=$hy_password, sni=$hy_server_name, skip-cert-verify=true, port-hopping=\"${formatted_range}\", port-hopping-interval=30"
+  fi
+  echo ""
+  
   # Update argo domain if needed
   if [ -f "/root/sbox/argo.log" ]; then
     cat /root/sbox/argo.log | grep trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}' | xargs -I {} sed -i "s/ARGO_DOMAIN='.*'/ARGO_DOMAIN='{}'/g" /root/sbox/config
@@ -334,6 +347,12 @@ show_client_configuration() {
   echo "WebSocket路径: ${ws_path}?ed=2048"
   echo "WSS端口: 443 (可选: 2053 2083 2087 2096 8443)"
   echo "WS端口: 80 (可选: 8080 8880 2052 2082 2086 2095)"
+  echo ""
+  hint "Surge 配置行 (WSS/TLS):"
+  echo "VMess = vmess, $argo_domain, 443, username=$vmess_uuid, ws=true, ws-path=/${ws_path}?ed=2048, tls=true, sni=$argo_domain"
+  echo ""
+  hint "Surge 配置行 (WS):"
+  echo "VMess = vmess, $argo_domain, 80, username=$vmess_uuid, ws=true, ws-path=/${ws_path}?ed=2048"
   echo ""
 }
 
@@ -698,38 +717,89 @@ process_warp(){
 }
 enable_warp(){
 while :; do
-     warning "请选择是否需要注册warp"
+     warning "请选择WARP凭据来源"
      echo ""
      info "请选择选项："
      echo ""
-     info "1. 使用绵羊提供的warp节点(默认)"
-     info "2. 使用手动刷的warp节点"
+     info "1. 使用预置的warp节点"
+     info "2. 在线注册新的warp节点"
+     info "3. 手动输入自己的warp凭据（推荐）"
      info "0. 退出"
      echo ""
-     read -p "请输入对应数字（0-2）: " user_input
-     user_input=${user_input:-1}
+     read -p "请输入对应数字（0-3）: " user_input
+     user_input=${user_input:-3}
      case $user_input in
          1)
+             warning "注意: 预置凭据为共享账号，存在隐私风险"
              v6="2606:4700:110:87ad:b400:91:eadb:887f"
              private_key="wIC19yRRSJkhVJcE09Qo9bE3P3PIwS3yyqyUnjwNO34="
              reserved="XiBe"
              break
              ;;
          2)
-             warning "开始注册warp..."
-             output=$(bash -c "$(curl -L warp-reg.vercel.app)")
-             v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
-             private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
-             reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
+             info "使用 wgcf 本地安全注册 WARP..."
+             echo ""
+             
+             # 检测架构
+             arch=$(uname -m)
+             case ${arch} in
+                 x86_64) wgcf_arch="amd64" ;;
+                 aarch64) wgcf_arch="arm64" ;;
+                 armv7l) wgcf_arch="armv7" ;;
+                 *) error "不支持的架构: $arch" ;;
+             esac
+             
+             # 下载 wgcf
+             wgcf_url="https://github.com/ViRb3/wgcf/releases/latest/download/wgcf_${wgcf_arch}_linux"
+             info "下载 wgcf..."
+             curl -sLo /tmp/wgcf "$wgcf_url"
+             chmod +x /tmp/wgcf
+             
+             # 注册并生成配置
+             cd /tmp
+             info "注册 WARP 账号..."
+             /tmp/wgcf register --accept-tos
+             /tmp/wgcf generate
+             
+             # 解析凭据
+             if [ -f "/tmp/wgcf-profile.conf" ]; then
+                 private_key=$(grep "PrivateKey" /tmp/wgcf-profile.conf | cut -d'=' -f2 | tr -d ' ')
+                 v6=$(grep "Address" /tmp/wgcf-profile.conf | grep -oP '[0-9a-f:]+/128' | cut -d'/' -f1)
+                 # wgcf 不生成 reserved，使用默认值
+                 reserved="AAAA"
+                 
+                 info "注册成功！"
+                 echo "Private Key: $private_key"
+                 echo "IPv6: $v6"
+                 echo "Reserved: $reserved"
+                 
+                 # 清理临时文件
+                 rm -f /tmp/wgcf /tmp/wgcf-account.toml /tmp/wgcf-profile.conf
+             else
+                 warning "注册失败，请稍后重试或选择手动输入"
+                 rm -f /tmp/wgcf
+                 continue
+             fi
+             break
+             ;;
+         3)
+             info "请输入您自己的WARP凭据"
+             echo ""
+             read -p "请输入 IPv6 地址: " v6
+             read -p "请输入 Private Key: " private_key
+             read -p "请输入 Reserved (字符串格式): " reserved
+             if [ -z "$v6" ] || [ -z "$private_key" ] || [ -z "$reserved" ]; then
+                 warning "凭据不完整，请重新输入"
+                 continue
+             fi
+             info "凭据已设置"
              break
              ;;
          0)
-             # Exit the loop if option 0 is selected
              echo "退出"
              exit 0
              ;;
          *)
-             # Handle invalid input
              echo "无效的输入，请重新输入"
              ;;
      esac
@@ -1011,17 +1081,30 @@ enable_hy2hopping(){
     ip6tables -t nat -A PREROUTING -i $default_interface -p udp --dport $start_port:$end_port -j REDIRECT --to-ports $hy_current_port
 
     sed -i "s/HY_HOPPING=FALSE/HY_HOPPING=TRUE/" /root/sbox/config
+    
     info "端口跳跃已开启: $start_port-$end_port -> $hy_current_port (网卡: $default_interface)"
+    echo ""
+    warning "提示: iptables规则重启后会失效，如需持久化请运行:"
+    hint "apt install iptables-persistent -y && netfilter-persistent save"
 
 }
 
 disable_hy2hopping(){
   echo "关闭端口跳跃..."
-  iptables -t nat -F PREROUTING >/dev/null 2>&1
-  ip6tables -t nat -F PREROUTING >/dev/null 2>&1
+  
+  # 删除所有端口跳跃相关的 REDIRECT 规则
+  iptables -t nat -S PREROUTING 2>/dev/null | grep "REDIRECT" | while read rule; do
+    iptables -t nat $(echo "$rule" | sed 's/-A/-D/') 2>/dev/null
+  done
+  ip6tables -t nat -S PREROUTING 2>/dev/null | grep "REDIRECT" | while read rule; do
+    ip6tables -t nat $(echo "$rule" | sed 's/-A/-D/') 2>/dev/null
+  done
+  
   sed -i "s/HY_HOPPING=TRUE/HY_HOPPING=FALSE/" /root/sbox/config
-    #TOREMOVE compatible with legacy users
+  # 兼容旧版本
   sed -i "s/HY_HOPPING='TRUE'/HY_HOPPING=FALSE/" /root/sbox/config
+  
+  info "端口跳跃规则已清除"
 }
 
 # Check if script is called with 'menu' parameter to show management interface

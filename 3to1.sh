@@ -993,16 +993,25 @@ process_hy2hopping(){
 enable_hy2hopping(){
     hint "开启端口跳跃..."
     warning "注意: 端口跳跃范围不要覆盖已经占用的端口，否则会错误！"
+    
+    # 自动检测默认网卡名称
+    default_interface=$(ip route | grep default | awk '{print $5}' | head -n1)
+    if [ -z "$default_interface" ]; then
+        warning "无法自动检测网卡，使用 eth0 作为默认值"
+        default_interface="eth0"
+    fi
+    info "检测到网卡: $default_interface"
+    
     hy_current_port=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .listen_port' /root/sbox/sbconfig_server.json)
     read -p "输入UDP端口范围的起始值(默认50000): " -r start_port
     start_port=${start_port:-50000}
     read -p "输入UDP端口范围的结束值(默认51000): " -r end_port
     end_port=${end_port:-51000}
-    iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
-    ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+    iptables -t nat -A PREROUTING -i $default_interface -p udp --dport $start_port:$end_port -j REDIRECT --to-ports $hy_current_port
+    ip6tables -t nat -A PREROUTING -i $default_interface -p udp --dport $start_port:$end_port -j REDIRECT --to-ports $hy_current_port
 
     sed -i "s/HY_HOPPING=FALSE/HY_HOPPING=TRUE/" /root/sbox/config
-
+    info "端口跳跃已开启: $start_port-$end_port -> $hy_current_port (网卡: $default_interface)"
 
 }
 

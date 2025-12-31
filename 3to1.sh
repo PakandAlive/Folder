@@ -116,8 +116,18 @@ install_pkgs() {
   done
 }
 install_shortcut() {
-  # Copy the current script to a fixed location for future use
-  cp "$0" /root/sbox/3to1_main.sh
+  # 脚本 GitHub 地址
+  SCRIPT_URL="https://raw.githubusercontent.com/PakandAlive/Folder/main/3to1.sh"
+  
+  # 检查 $0 是否是有效的脚本文件
+  if [ -f "$0" ]; then
+    # 如果是本地文件运行，直接复制
+    cp "$0" /root/sbox/3to1_main.sh
+  else
+    # 如果是通过管道运行 (bash <(curl ...))，从 GitHub 下载
+    info "从 GitHub 下载脚本..."
+    curl -sLo /root/sbox/3to1_main.sh "$SCRIPT_URL"
+  fi
   chmod +x /root/sbox/3to1_main.sh
   
   cat > /root/sbox/nowhash.sh << 'EOF'

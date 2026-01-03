@@ -24,9 +24,9 @@ show_main_menu() {
     printf " ${GREEN}04)解压工具${NC}          ${GREEN}05)清理Nezha${NC}         ${GREEN}06)流媒体检测${NC}\n"
     printf " ${GREEN}07)优选IP${NC}            ${GREEN}08)查看Sbox链接${NC}      ${GREEN}09)PM2状态${NC}\n"
     printf " ${GREEN}10)安装TM${NC}            ${ORANGE}11)安装H-UI${NC}          ${ORANGE}12)安装3to1${NC}\n"
-    printf " ${ORANGE}13)哪吒探针${NC}          ${ORANGE}14)安装X-UI${NC}          ${BLUE}15)Docker监测${NC}\n"
+    printf " ${ORANGE}13)哪吒探针${NC}          ${ORANGE}14)安装X-UI${NC}          ${ORANGE}15)Snell协议${NC}\n"
     printf " ${BLUE}16)DockerPakNotion${NC}   ${BLUE}17)Dockerweb${NC}         ${BLUE}18)OKXBot${NC}\n"
-    printf " ${BLUE}19)0xfuckNotion${NC}      ${ORANGE}20)Snell协议${NC}\n"
+    printf " ${BLUE}19)0xfuckNotion${NC}      ${BLUE}20)Docker监测${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -340,12 +340,12 @@ while true; do
         12) execute_proxy 1 ;;
         13) execute_monitor 2 ;;
         14) execute_proxy 4 ;;
-        15) execute_monitor 6 ;;
+        15) execute_proxy 6 ;;
         16) execute_basic 4 ;;
         17) execute_tools 6 ;;
         18) execute_tools 7 ;;
         19) execute_basic 5 ;;
-        20) execute_proxy 6 ;;
+        20) execute_monitor 6 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

@@ -21,13 +21,12 @@ show_main_menu() {
     echo -e "${GREEN}=== VPS 管理脚本 ===${NC}"
     echo ""
     printf " ${GREEN}01)安装Docker${NC}        ${GREEN}02)安装1Panel${NC}        ${GREEN}03)修改系统密码${NC}\n"
-    printf " ${GREEN}04)解压工具${NC}          ${GREEN}05)清理Nezha${NC}         ${GREEN}06)Serv00后台${NC}\n"
-    printf " ${GREEN}07)流媒体检测${NC}        ${GREEN}08)优选IP${NC}            ${GREEN}09)Hummingbot${NC}\n"
-    printf " ${GREEN}10)查看Sbox链接${NC}      ${GREEN}11)PM2状态${NC}           ${GREEN}12)安装TM${NC}\n"
-    printf " ${ORANGE}13)安装H-UI${NC}          ${ORANGE}14)安装3to1${NC}          ${ORANGE}15)哪吒探针${NC}\n"
-    printf " ${ORANGE}16)安装X-UI${NC}          ${ORANGE}17)Alpine Hy2${NC}        ${ORANGE}18)Serv00 Hy2${NC}\n"
-    printf " ${BLUE}19)Docker监测${NC}        ${BLUE}20)DockerPakNotion${NC}   ${BLUE}21)Dockerweb${NC}\n"
-    printf " ${BLUE}22)OKXBot${NC}            ${BLUE}23)0xfuckNotion${NC}\n"
+    printf " ${GREEN}04)解压工具${NC}          ${GREEN}05)清理Nezha${NC}         ${GREEN}06)流媒体检测${NC}\n"
+    printf " ${GREEN}07)优选IP${NC}            ${GREEN}08)查看Sbox链接${NC}      ${GREEN}09)PM2状态${NC}\n"
+    printf " ${GREEN}10)安装TM${NC}            ${ORANGE}11)安装H-UI${NC}          ${ORANGE}12)安装3to1${NC}\n"
+    printf " ${ORANGE}13)哪吒探针${NC}          ${ORANGE}14)安装X-UI${NC}          ${BLUE}15)Docker监测${NC}\n"
+    printf " ${BLUE}16)DockerPakNotion${NC}   ${BLUE}17)Dockerweb${NC}         ${BLUE}18)OKXBot${NC}\n"
+    printf " ${BLUE}19)0xfuckNotion${NC}      ${ORANGE}20)Snell协议${NC}\n"
     echo ""
     echo " 0) 退出"
     echo "------------------------"
@@ -148,6 +147,10 @@ execute_proxy() {
         5)
             echo "正在安装 H-UI..."
             bash <(curl -fsSL https://raw.githubusercontent.com/jonssonyan/h-ui/main/install.sh)
+            ;;
+        6)
+            echo "正在安装 Snell 协议..."
+            wget -q https://raw.githubusercontent.com/passeway/Snell/main/Snell.sh -O Snell.sh && chmod +x Snell.sh && ./Snell.sh
             ;;
     esac
 }
@@ -317,7 +320,7 @@ handle_submenu() {
 # 主程序循环
 while true; do
     show_main_menu
-    read -p "请选择操作 (0-23): " choice
+    read -p "请选择操作 (0-20): " choice
     case $choice in
         0)
             echo "退出程序..."
@@ -328,24 +331,21 @@ while true; do
         3) execute_tools 5 ;;
         4) execute_tools 1 ;;
         5) execute_monitor 3 ;;
-        6) execute_monitor 4 ;;
-        7) execute_monitor 5 ;;
-        8) execute_monitor 1 ;;
-        9) execute_tools 2 ;;
-        10) execute_tools 3 ;;
-        11) execute_tools 4 ;;
-        12) execute_basic 3 ;;
-        13) execute_proxy 5 ;;
-        14) execute_proxy 1 ;;
-        15) execute_monitor 2 ;;
-        16) execute_proxy 4 ;;
-        17) execute_proxy 2 ;;
-        18) execute_proxy 3 ;;
-        19) execute_monitor 6 ;;
-        20) execute_basic 4 ;;
-        21) execute_tools 6 ;;
-        22) execute_tools 7 ;;
-        23) execute_basic 5 ;;
+        6) execute_monitor 5 ;;
+        7) execute_monitor 1 ;;
+        8) execute_tools 3 ;;
+        9) execute_tools 4 ;;
+        10) execute_basic 3 ;;
+        11) execute_proxy 5 ;;
+        12) execute_proxy 1 ;;
+        13) execute_monitor 2 ;;
+        14) execute_proxy 4 ;;
+        15) execute_monitor 6 ;;
+        16) execute_basic 4 ;;
+        17) execute_tools 6 ;;
+        18) execute_tools 7 ;;
+        19) execute_basic 5 ;;
+        20) execute_proxy 6 ;;
         *)
             echo "无效选项，请重新选择"
             read -p "按回车键继续..."

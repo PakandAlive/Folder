@@ -64,7 +64,9 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def main() -> None:
     try:
         # 创建 Application 对象并传入您的 Telegram 机器人令牌
-        application = ApplicationBuilder().token("8057524104:AAHQce9gTP-hTKip0nmLRGQkwJOCHFz7ytY").build()
+        import os
+        bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
+        application = ApplicationBuilder().token(bot_token).build()
 
         # 注册关键词 "info" 的处理程序
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, info))

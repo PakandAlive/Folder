@@ -32,6 +32,10 @@ if (typeof $response === 'undefined' || !$response || typeof $response.body !== 
     console.log('[duolingoiosmax] 命中条件，准备修改响应 index=' + targetIndex);
     const now = Math.floor(Date.now() / 1000);
     const userdata = JSON.parse(obj.responses[targetIndex].body);
+    console.log('[duolingoiosmax] userdata 顶层字段=' + Object.keys(userdata).join(','));
+    const originalLevel = userdata.subscriberLevel;
+    const originalShopItems = Array.isArray(userdata.shopItems) ? userdata.shopItems.length : 0;
+    console.log('[duolingoiosmax] 原 subscriberLevel=' + (originalLevel || '空') + ' shopItems数量=' + originalShopItems);
         if (!userdata.shopItems) userdata.shopItems = [];
         const hasGold = userdata.shopItems.some(item =>
             item && item.id === 'gold_subscription' &&

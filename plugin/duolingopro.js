@@ -31,6 +31,8 @@ if (typeof $response === 'undefined' || !$response || typeof $response.body !== 
     // ============================================
     if (topKeys.includes('subscriptionFeatures')) {
         console.log('[duolingoiosmax] ✅ 命中 available-features 接口');
+        // DUMP 原始数据以分析真实格式
+        console.log('[duolingoiosmax] [DUMP-avail] 原始=' + rawBody.substring(0, 500));
 
         // 定义所有需要解锁的订阅功能
         const allSubscriptionFeatures = [
@@ -81,6 +83,8 @@ if (typeof $response === 'undefined' || !$response || typeof $response.body !== 
     // ============================================
     if (topKeys.includes('plusPackageViewModels') && topKeys.includes('subscriptionFeatureGroupId')) {
         console.log('[duolingoiosmax] ✅ 命中 subscription-catalog 接口');
+        // DUMP 原始数据以分析真实格式（最多 800 字符）
+        console.log('[duolingoiosmax] [DUMP-catalog] 原始=' + rawBody.substring(0, 800));
 
         // 修改 layout，使 UI 认为用户已订阅
         if (obj.plusPackageViewModels && Array.isArray(obj.plusPackageViewModels)) {
@@ -97,6 +101,48 @@ if (typeof $response === 'undefined' || !$response || typeof $response.body !== 
         }
 
         console.log('[duolingoiosmax] ✅ subscription-catalog 修改完成');
+        modified = true;
+    }
+
+    // ============================================
+    // 策略 3.5：plus-promotions 广告推广决策接口
+    // 包括：centralized-decision、decisions、compute-decision、recent-ad-show/verify
+    // 目标：返回"不展示广告/推广"的决策
+    // ============================================
+
+    // centralized-decision 接口（ML 推广决策）
+    // 通常返回 { decisions: [...], ... } 或类似格式
+    if (topKeys.includes('decisions') || topKeys.includes('decision')) {
+        console.log('[duolingoiosmax] ✅ 命中 plus-promotions 决策接口');
+        console.log('[duolingoiosmax] [DUMP-promo] 原始=' + rawBody.substring(0, 500));
+        // 清空所有广告决策
+        if (obj.decisions) obj.decisions = [];
+        if (obj.decision) obj.decision = null;
+        if (obj.showPromotion !== undefined) obj.showPromotion = false;
+        if (obj.shouldShow !== undefined) obj.shouldShow = false;
+        if (obj.show !== undefined) obj.show = false;
+        if (obj.isEligible !== undefined) obj.isEligible = false;
+        if (obj.promotionType !== undefined) obj.promotionType = null;
+        if (obj.action !== undefined) obj.action = 'NONE';
+        console.log('[duolingoiosmax] ✅ 广告决策已清空/禁用');
+        modified = true;
+    }
+
+    // compute-decision / recent-ad-show 接口
+    if (topKeys.includes('showAd') || topKeys.includes('adType') || topKeys.includes('adUnit')) {
+        console.log('[duolingoiosmax] ✅ 命中广告展示决策接口');
+        if (obj.showAd !== undefined) obj.showAd = false;
+        if (obj.adType !== undefined) obj.adType = null;
+        if (obj.adUnit !== undefined) obj.adUnit = null;
+        modified = true;
+    }
+
+    // 通用推广弹窗检测：包含 promotion/promo 相关字段
+    if (topKeys.includes('promotions') || topKeys.includes('promotion') || topKeys.includes('promoContent')) {
+        console.log('[duolingoiosmax] ✅ 命中推广内容接口');
+        if (obj.promotions) obj.promotions = [];
+        if (obj.promotion) obj.promotion = null;
+        if (obj.promoContent) obj.promoContent = null;
         modified = true;
     }
 
@@ -183,6 +229,8 @@ if (typeof $response === 'undefined' || !$response || typeof $response.body !== 
     // ============================================
     if (topKeys.includes('responseState') && topKeys.includes('uiConfig') && topKeys.includes('dataModel')) {
         console.log('[duolingoiosmax] ✅ 命中 sdui-shop 接口');
+        // sdui-shop 太大（1.3MB），只打印 dataModel 的顶层字段
+        if (obj.dataModel) console.log('[duolingoiosmax] [DUMP-shop] dataModel字段=' + Object.keys(obj.dataModel).slice(0, 15).join(','));
         // 修改 responseState 表示用户已订阅
         if (obj.dataModel && typeof obj.dataModel === 'object') {
             // 尝试修改数据模型中的订阅状态

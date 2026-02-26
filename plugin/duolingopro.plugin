@@ -15,7 +15,23 @@ http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/2023-05-23\/users\/\d+ script
 http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/2023-05-23\/config script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max配置
 
 # 拦截 v1/features 接口
-http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/v1\/features script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max Features
+http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/v1\/features script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=MaxFeatures
+
+# 拦截广告推广决策接口（去广告核心）
+http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/plus-promotions\/ script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max去广告1
+
+# 拦截广告推广决策接口（旧版 API 前缀）
+http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/2021-05-05\/plus-promotions\/ script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max去广告2
+
+# 拦截广告展示验证接口（新版 API 前缀）
+http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/2025-08-01\/plus-promotions\/ script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max去广告3
+
+# 拦截 sdui-shop 接口
+http-response ^https?:\/\/ios-api-2\.duolingo\.cn\/2023-05-23\/users\/\d+\/sdui-shop script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/duolingopro.js, requires-body=true, timeout=120, tag=Max商店
+
+[Rewrite]
+# 阻断 midas-bandits 广告投放服务
+^https?:\/\/midas-bandits-prod\.duolingo\.cn\/ reject
 
 [MITM]
-hostname = ios-api-2.duolingo.cn
+hostname = ios-api-2.duolingo.cn, midas-bandits-prod.duolingo.cn

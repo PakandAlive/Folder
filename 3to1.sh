@@ -1394,8 +1394,6 @@ cat > /root/sbox/sbconfig_server.json << EOF
   },
   "inbounds": [
     {
-      "sniff": true,
-      "sniff_override_destination": true,
       "type": "vless",
       "tag": "vless-in",
       "listen": "::",
@@ -1421,8 +1419,6 @@ cat > /root/sbox/sbconfig_server.json << EOF
       }
     },
     {
-        "sniff": true,
-        "sniff_override_destination": true,
         "type": "hysteria2",
         "tag": "hy2-in",
         "listen": "::",
@@ -1442,8 +1438,6 @@ cat > /root/sbox/sbconfig_server.json << EOF
         }
     },
     {
-        "sniff": true,
-        "sniff_override_destination": true,
         "type": "vmess",
         "tag": "vmess-in",
         "listen": "::",

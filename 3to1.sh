@@ -342,6 +342,26 @@ show_client_configuration() {
     rm -f /root/sbox/argo.log
   fi
   
+  # anytls
+  anytls_port=$(jq -r '.inbounds[] | select(.tag == "anytls-in") | .listen_port' /root/sbox/sbconfig_server.json)
+  anytls_password=$(jq -r '.inbounds[] | select(.tag == "anytls-in") | .users[0].password' /root/sbox/sbconfig_server.json)
+  anytls_server_name=$(jq -r '.inbounds[] | select(.tag == "anytls-in") | .tls.server_name' /root/sbox/sbconfig_server.json)
+
+  echo ""
+  show_notice "AnyTLS 配置参数"
+  echo ""
+  info "AnyTLS 通用参数如下"
+  echo ""
+  echo "服务器地址: $server_ip 或灰云域名"
+  echo "端口号: $anytls_port"
+  echo "密码password: $anytls_password"
+  echo "域名SNI: $anytls_server_name"
+  echo "跳过证书验证（允许不安全）: True"
+  echo ""
+  hint "客户端参数:"
+  echo "type=anytls, server=$server_ip, port=$anytls_port, password=$anytls_password, sni=$anytls_server_name, skip-cert-verify=true"
+  echo ""
+
   # vmess
   argo_domain=$(grep -o "ARGO_DOMAIN='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   vmess_uuid=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .users[0].uuid' /root/sbox/sbconfig_server.json)
@@ -398,15 +418,32 @@ modify_singbox() {
     hy_current_port=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .listen_port' /root/sbox/sbconfig_server.json)
     hy_port=$(modify_port "$hy_current_port")
 
+    # modifying anytls configuration
+    warning "开始修改anytls端口号和SNI"
+    anytls_current_port=$(jq -r '.inbounds[] | select(.tag == "anytls-in") | .listen_port' /root/sbox/sbconfig_server.json)
+    anytls_port=$(modify_port "$anytls_current_port")
+    anytls_current_server_name=$(jq -r '.inbounds[] | select(.tag == "anytls-in") | .tls.server_name' /root/sbox/sbconfig_server.json)
+    read -p "请输入AnyTLS证书域名/SNI (默认: $anytls_current_server_name): " input_anytls_server_name
+    anytls_server_name=${input_anytls_server_name:-$anytls_current_server_name}
+    if [ "$anytls_server_name" != "$anytls_current_server_name" ]; then
+        mkdir -p /root/sbox/anytls-cert/
+        openssl ecparam -genkey -name prime256v1 -out /root/sbox/anytls-cert/key.pem
+        openssl req -new -x509 -days 36500 -key /root/sbox/anytls-cert/key.pem -out /root/sbox/anytls-cert/cert.pem -subj "/CN=${anytls_server_name}"
+    fi
+
     # 修改sing-box
     jq --arg reality_port "$reality_port" \
     --arg hy_port "$hy_port" \
+    --arg anytls_port "$anytls_port" \
     --arg reality_server_name "$reality_server_name" \
+    --arg anytls_server_name "$anytls_server_name" \
     '
     (.inbounds[] | select(.tag == "vless-in") | .listen_port) |= ($reality_port | tonumber) |
     (.inbounds[] | select(.tag == "hy2-in") | .listen_port) |= ($hy_port | tonumber) |
+    (.inbounds[] | select(.tag == "anytls-in") | .listen_port) |= ($anytls_port | tonumber) |
     (.inbounds[] | select(.tag == "vless-in") | .tls.server_name) |= $reality_server_name |
-    (.inbounds[] | select(.tag == "vless-in") | .tls.reality.handshake.server) |= $reality_server_name
+    (.inbounds[] | select(.tag == "vless-in") | .tls.reality.handshake.server) |= $reality_server_name |
+    (.inbounds[] | select(.tag == "anytls-in") | .tls.server_name) |= $anytls_server_name
     ' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
 
     echo ""
@@ -433,6 +470,9 @@ uninstall_singbox() {
     rm -f /root/sbox/cloudflared-linux
     rm -f /root/sbox/self-cert/private.key
     rm -f /root/sbox/self-cert/cert.pem
+    rm -f /root/sbox/anytls-cert/key.pem
+    rm -f /root/sbox/anytls-cert/cert.pem
+    rmdir /root/sbox/anytls-cert 2>/dev/null || true
     rm -f /root/sbox/config
 
     # Remove directories
@@ -1336,6 +1376,22 @@ info "生成的端口号为: $vmess_port"
 read -p "ws路径 (无需加斜杠,默认随机生成): " ws_path
 ws_path=${ws_path:-$(/root/sbox/sing-box generate rand --hex 6)}
 info "生成的path为: $ws_path"
+echo ""
+echo ""
+# anytls
+warning "开始配置AnyTLS..."
+echo ""
+anytls_password=$(openssl rand -base64 16)
+info "password: $anytls_password"
+echo ""
+anytls_port=$(generate_port)
+info "生成的端口号为: $anytls_port"
+read -p "输入AnyTLS证书域名/SNI (默认为: bing.com): " anytls_server_name
+anytls_server_name=${anytls_server_name:-bing.com}
+mkdir -p /root/sbox/anytls-cert/ && openssl ecparam -genkey -name prime256v1 -out /root/sbox/anytls-cert/key.pem && openssl req -new -x509 -days 36500 -key /root/sbox/anytls-cert/key.pem -out /root/sbox/anytls-cert/cert.pem -subj "/CN=${anytls_server_name}"
+chmod 600 /root/sbox/anytls-cert/key.pem
+chmod 644 /root/sbox/anytls-cert/cert.pem
+info "AnyTLS自签证书生成完成,保存于/root/sbox/anytls-cert/"
 #get ip
 server_ip=$(curl -s4m8 ip.sb -k) || server_ip=$(curl -s6m8 ip.sb -k)
 
@@ -1350,6 +1406,9 @@ HY_SERVER_NAME='$hy_server_name'
 HY_HOPPING=FALSE
 # Vmess
 VMESS_PORT=$vmess_port
+# AnyTLS
+ANYTLS_PORT=$anytls_port
+ANYTLS_SERVER_NAME='$anytls_server_name'
 # Argo
 ARGO_DOMAIN=''
 # Warp
@@ -1453,6 +1512,24 @@ cat > /root/sbox/sbconfig_server.json << EOF
             "path": "$ws_path",
             "max_early_data":2048,
             "early_data_header_name":"Sec-WebSocket-Protocol"
+        }
+    },
+    {
+        "type": "anytls",
+        "tag": "anytls-in",
+        "listen": "::",
+        "listen_port": $anytls_port,
+        "users": [
+            {
+                "name": "user1",
+                "password": "$anytls_password"
+            }
+        ],
+        "tls": {
+            "enabled": true,
+            "server_name": "$anytls_server_name",
+            "certificate_path": "/root/sbox/anytls-cert/cert.pem",
+            "key_path": "/root/sbox/anytls-cert/key.pem"
         }
     }
   ],

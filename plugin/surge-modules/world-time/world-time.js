@@ -26,6 +26,4 @@ const 内容 = 地区列表
 $done({
   title: "世界时间",
   content: 内容,
-  icon: "clock.fill",
-  "icon-color": "#1677FF",
 });

@@ -1,0 +1,9 @@
+#!name=世界时间
+#!desc=在 Surge 面板显示美东、英国曼彻斯特和上海的当前时间
+#!author=Local
+
+[Panel]
+世界时间 = script-name=世界时间, update-interval=60
+
+[Script]
+世界时间 = type=generic, timeout=5, script-path=world-time.js

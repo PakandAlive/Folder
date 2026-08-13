@@ -3,7 +3,7 @@
 #!author=Local
 
 [Panel]
-世界时间 = script-name=世界时间, update-interval=60
+世界时间 = script-name=世界时间, update-interval=-1
 
 [Script]
 世界时间 = type=generic, timeout=5, script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/surge-modules/world-time/world-time.js

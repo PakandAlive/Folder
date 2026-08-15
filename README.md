@@ -23,6 +23,8 @@
 
 用于安装和管理 Reality、Hysteria2、Vmess Argo 等代理协议。脚本会修改服务器网络与服务配置，运行前必须先审阅源码。
 
+- [3to1.sh 源码](https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/server/3to1.sh)
+
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/server/3to1.sh)
 ```
@@ -38,12 +40,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scri
 - [TikTok 重定向](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/TikTok_redirect.plugin)
 - [微博去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/Weibo%20Remove%20Ads.plugin)
 - [YouTube 去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/YouTube_remove_ads.plugin)
+- [Duolingo 配套脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/duolingopro.js)
 
 ## Surge 模块
 
-- [IP 信息查询](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.sgmodule)
-- [流媒体解锁检测](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.sgmodule)
-- [世界时间](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.sgmodule)
+- IP 信息查询：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.js)
+- 流媒体解锁检测：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.js)
+- 世界时间：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.js) | [开发指南](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/Surge%E6%A8%A1%E5%9D%97%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
 
 世界时间模块的开发说明位于 [`plugins/surge/world-time/Surge模块开发指南.md`](plugins/surge/world-time/Surge模块开发指南.md)。
 
@@ -51,12 +54,34 @@ bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scri
 
 `rules/` 按服务保存独立规则文件，包括 AI 服务、流媒体、社交平台、支付与金融服务。规则格式和兼容性以使用的代理客户端为准。
 
+- [COCA.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/COCA.list)
+- [FIMO.js](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/FIMO.js)
+- [Gemini.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Gemini.list)
+- [MoneseCard.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/MoneseCard.list)
+- [N26.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/N26.list)
+- [Netflix.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Netflix.list)
+- [OpenAI-Claude.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/OpenAI-Claude.list)
+- [Sing Box Proxy List.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Sing%20Box%20Proxy%20List.list)
+- [Talkalone.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Talkalone.list)
+- [TalkaloneREJECT.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/TalkaloneREJECT.list)
+- [Trading212.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Trading212.list)
+- [TranslateX.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/TranslateX.list)
+- [Twitter.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Twitter.list)
+- [Weibo-Rednote.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Weibo-Rednote.list)
+- [YouTube-TG.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/YouTube-TG.list)
+- [appleintelligence.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/appleintelligence.list)
+- [bybit.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/bybit.list)
+- [claudeai.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/claudeai.list)
+- [etherfi.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/etherfi.list)
+- [notcn.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/notcn.list)
+- [x.list](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/x.list)
+
 ## Python 脚本
 
-- `scripts/automation/boyinfo.py`：Telegram 自动化脚本，必须通过 `TELEGRAM_BOT_TOKEN` 环境变量提供令牌。
-- `scripts/security/login_test.py`：默认凭据审计脚本，只能用于已获授权的目标；必须设置 `AUDIT_CONFIRMATION=authorized`、`AUDIT_USERNAME` 和 `AUDIT_PASSWORD`。
-- `scripts/utilities/gmail_normalizer.py`：生成 Gmail 点号与加号别名。
-- `scripts/utilities/update_cursor_ids.py`：更新当前用户 Cursor 本地遥测标识。
+- [boyinfo.py](https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/automation/boyinfo.py)：Telegram 自动化脚本，必须通过 `TELEGRAM_BOT_TOKEN` 环境变量提供令牌。
+- [login_test.py](https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/security/login_test.py)：默认凭据审计脚本，只能用于已获授权的目标；必须设置 `AUDIT_CONFIRMATION=authorized`、`AUDIT_USERNAME` 和 `AUDIT_PASSWORD`。
+- [gmail_normalizer.py](https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/utilities/gmail_normalizer.py)：生成 Gmail 点号与加号别名。
+- [update_cursor_ids.py](https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/utilities/update_cursor_ids.py)：更新当前用户 Cursor 本地遥测标识。
 
 运行时输入文件、输出文件、数据库、日志和本地环境变量文件均不应提交到仓库。
 

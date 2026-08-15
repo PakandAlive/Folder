@@ -15,8 +15,6 @@ async function handleRequest(request) {
     return handleChatCompletions(request)
   } else if (url.pathname === '/health' && request.method === 'GET') {
     return handleHealth()
-  } else if (url.pathname === '/debug' && request.method === 'GET') {
-    return handleDebug(request)
   } else {
     return new Response('Not Found', { status: 404 })
   }
@@ -78,21 +76,6 @@ async function handleHealth() {
     uptime: Date.now()
   }
   const response = new Response(JSON.stringify(healthResponse), {
-    headers: { 'Content-Type': 'application/json' }
-  })
-  return setCORSHeaders(response)
-}
-
-// 调试信息端点
-async function handleDebug(request) {
-  const debugInfo = {
-    timestamp: new Date().toISOString(),
-    headers: Object.fromEntries(request.headers.entries()),
-    method: request.method,
-    url: request.url,
-    cf: request.cf || null
-  }
-  const response = new Response(JSON.stringify(debugInfo, null, 2), {
     headers: { 'Content-Type': 'application/json' }
   })
   return setCORSHeaders(response)

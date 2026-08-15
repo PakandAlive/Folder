@@ -6,4 +6,4 @@
 世界时间 = script-name=世界时间脚本-v2, update-interval=-1
 
 [Script]
-世界时间脚本-v2 = type=generic, timeout=5, script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/surge-modules/world-time/world-time.js?v=2
+世界时间脚本-v2 = type=generic, timeout=5, script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.js?v=2

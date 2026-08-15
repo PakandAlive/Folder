@@ -150,28 +150,14 @@ app.use(async (ctx, next) => {
     } else {
       console.error("Internal Server Error:", err);
       ctx.response.status = Status.InternalServerError;
-      ctx.response.body = { error: "Internal Server Error", message: err.message };
+      ctx.response.body = { error: "Internal Server Error" };
     }
   }
 });
 
 // Fixed IP detection function
 function getClientIp(ctx: Context): string {
-    const headers = ctx.request.headers;
-    // Prefer the Cloudflare header
-    const cfIp = headers.get("cf-connecting-ip");
-    if (cfIp) return cfIp;
-
-    // Fallback to X-Forwarded-For
-    const xff = headers.get("x-forwarded-for");
-    if (xff) return xff.split(',')[0].trim();
-
-    // Use X-Real-IP
-    const realIp = headers.get("x-real-ip");
-    if (realIp) return realIp;
-
-    // Fallback to localhost if all else fails
-    return "127.0.0.1";
+    return ctx.request.ip;
 }
 
 app.use(async (ctx, next) => {
@@ -405,8 +391,8 @@ function generateDashboardHTML(data: any): string {
 
             <div class="info-box">
                 <h3>📖 API 使用说明</h3>
-                <p><strong>聊天接口:</strong> <span class="api-endpoint">POST http://34.80.246.227:8031/api/v1/chat/completions</span></p>
-                <p><strong>模型列表:</strong> <span class="api-endpoint">GET http://34.80.246.227:8031/api/v1/models</span></p>
+                <p><strong>聊天接口:</strong> <span class="api-endpoint">POST /api/v1/chat/completions</span></p>
+                <p><strong>模型列表:</strong> <span class="api-endpoint">GET /api/v1/models</span></p>
                 <p><strong>支持模型:</strong> grok-3-mini, deepseek-r1, gpt-4o-mini, gpt-4.1</p>
                 <p><strong>特色:</strong> 🆓 免费使用 | 🔒 无需API密钥 | 📊 实时监控</p>
             </div>

@@ -1,0 +1,26 @@
+# macOS 元数据
+.DS_Store
+
+# 本地凭据与环境配置
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python 缓存与本地输入输出
+__pycache__/
+*.py[cod]
+.pytest_cache/
+hosts.csv
+result.csv
+
+# 服务运行数据与日志
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.log

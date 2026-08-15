@@ -1,7 +1,18 @@
 import csv
-import requests
-from threading import Thread, Lock
 import json
+import os
+from threading import Lock, Thread
+
+import requests
+
+
+if os.environ.get('AUDIT_CONFIRMATION') != 'authorized':
+    raise RuntimeError('仅允许审计已获授权的目标；请设置 AUDIT_CONFIRMATION=authorized')
+
+audit_username = os.environ.get('AUDIT_USERNAME')
+audit_password = os.environ.get('AUDIT_PASSWORD')
+if not audit_username or not audit_password:
+    raise RuntimeError('缺少必需的环境变量 AUDIT_USERNAME 或 AUDIT_PASSWORD')
 
 # 读取host列表
 hosts = []
@@ -20,7 +31,7 @@ lock = Lock()
 # 定义登录测试函数
 def test_login(host):
     login_url = f"{host}/api/user/login?turnstile="  # 根据HTTP请求构建URL
-    payload = json.dumps({"username":"root","password":"123456"})  # 使用JSON格式的请求体
+    payload = json.dumps({"username": audit_username, "password": audit_password})
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7,en-GB;q=0.6",

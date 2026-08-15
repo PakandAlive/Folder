@@ -1,147 +1,83 @@
-<div align="center">
+# 脚本与代理配置收藏库
 
-# ⚠️ 警告 / WARNING ⚠️
+这是一个按用途维护的个人脚本、代理插件、规则集和 API 服务收藏库。仓库中的内容来源不一，使用前应阅读对应文件及上游项目说明，并仅在合法、已授权的环境中运行。
 
-<p style="background-color: #FFE7E7; padding: 20px; border: 2px solid #FF0000;">
+## 目录结构
 
-**本仓库仅供个人使用，严禁 Fork ！**
+```text
+.
+├── assets/images/          图片资源
+├── plugins/loon/           Loon 插件及配套脚本
+├── plugins/surge/          Surge 模块及配套脚本
+├── rules/                  代理分流规则
+├── scripts/automation/     自动化脚本
+├── scripts/security/       仅限授权目标的安全检查脚本
+├── scripts/server/         VPS 和服务器管理脚本
+├── scripts/utilities/      本地实用工具
+└── services/api-proxies/   API 代理服务源码
+```
 
-**代码中包含其他开源项目的引用，如果私自使用，有隐藏风险，后果自负！**
+## 服务器脚本
 
-</p>
-</div>
+### 3to1
 
-&nbsp;
-
-&nbsp;
-
-# VPS 工具箱 🚀
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/PakandAlive/Folder.svg)](https://github.com/PakandAlive/Folder/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/PakandAlive/Folder.svg)](https://github.com/PakandAlive/Folder/network)
-
-一个功能强大的 VPS 管理工具箱,集成了常用的服务器管理、代理协议安装、系统监控等功能。
-
-## 🌟 特性
-
-- 一键安装各种服务
-- 支持多种代理协议
-- 系统状态监控
-- 便捷的配置管理
-- 完整的错误处理
-
-## 📦 安装
+用于安装和管理 Reality、Hysteria2、Vmess Argo 等代理协议。脚本会修改服务器网络与服务配置，运行前必须先审阅源码。
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/vpsall.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/server/3to1.sh)
 ```
 
-## 🛠️ 功能列表
+## Loon 插件
 
-### 基础服务
-- Docker 安装与管理
-- 1Panel 面板
-- TM 工具
+- [Bilibili 去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/Bilibili_remove_ads.plugin)
+- [Duolingo Max](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/duolingopro.plugin)
+- [FIMO](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/FIMO2LOON.plugin)
+- [网易云音乐去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/NeteaseCloudMusic_remove_ads.plugin)
+- [小红书去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/RedPaper_remove_ads.plugin)
+- [Spotify](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/Spotify.plugin)
+- [TikTok 重定向](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/TikTok_redirect.plugin)
+- [微博去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/Weibo%20Remove%20Ads.plugin)
+- [YouTube 去广告](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/loon/YouTube_remove_ads.plugin)
 
-### 代理协议
-- 3to1 (Reality + Hysteria2 + VmessArgo)
-  - 安装完成后可使用 `nowhash` 命令快速打开配置菜单
-- Alpine Hysteria2
-- Serv00 Hysteria2
-- X-UI 面板
+## Surge 模块
 
-### 系统工具
-- 优选 IP
-- 哪吒探针
-- 流媒体检测
-- Docker 监测
-- 解压工具
-- Hummingbot
-- PM2 状态监控
-- 系统密码修改
+- [IP 信息查询](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.sgmodule)
+- [流媒体解锁检测](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.sgmodule)
+- [世界时间](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.sgmodule)
 
-## 📝 使用说明
+世界时间模块的开发说明位于 [`plugins/surge/world-time/Surge模块开发指南.md`](plugins/surge/world-time/Surge模块开发指南.md)。
 
-### 主菜单操作
-```shell:vpsall.sh
-startLine: 16
-endLine: 32
-```
+## 分流规则
 
-### 3to1 快捷配置
-安装完成后，使用 `nowhash` 命令可以:
-- 快速打开配置菜单
-- 查看客户端配置
-- 管理代理服务
-- 配置 WARP 和端口跳跃
+`rules/` 按服务保存独立规则文件，包括 AI 服务、流媒体、社交平台、支付与金融服务。规则格式和兼容性以使用的代理客户端为准。
 
-## 🔌 LOON 插件
+## Python 脚本
 
-<details>
-<summary>系统相关</summary>
+- `scripts/automation/boyinfo.py`：Telegram 自动化脚本，必须通过 `TELEGRAM_BOT_TOKEN` 环境变量提供令牌。
+- `scripts/security/login_test.py`：默认凭据审计脚本，只能用于已获授权的目标；必须设置 `AUDIT_CONFIRMATION=authorized`、`AUDIT_USERNAME` 和 `AUDIT_PASSWORD`。
+- `scripts/utilities/gmail_normalizer.py`：生成 Gmail 点号与加号别名。
+- `scripts/utilities/update_cursor_ids.py`：更新当前用户 Cursor 本地遥测标识。
 
-- [屏蔽系统更新](https://whatshub.top/plugin/DisableUpdate.plugin)
-</details>
+运行时输入文件、输出文件、数据库、日志和本地环境变量文件均不应提交到仓库。
 
-<details>
-<summary>应用增强</summary>
+## API 服务
 
-- [Spotify Premium](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Spotify.plugin)
-- [Fimo PRO](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/FIMO2LOON.plugin)
-</details>
+- `services/api-proxies/lc2api-worker.js`：Cloudflare Worker 风格的 OpenAI 兼容代理。
+- `services/api-proxies/p2api-server.ts`：基于 Deno/Oak 的 OpenAI 兼容代理和统计服务。
 
-<details>
-<summary>广告拦截</summary>
+这些服务源码不包含部署凭据。部署前需要自行评估访问控制、公开接口、请求日志和统计数据的隐私风险。
 
-- [Bilibili](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Bilibili_remove_ads.plugin)
-- [YouTube](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/YouTube_remove_ads.plugin)
-- [Rednote](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/RedPaper_remove_ads.plugin)
-- [Weibo](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/Weibo_remove_ads.plugin)
-- [NeteaseCloudMusic](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/NeteaseCloudMusic_remove_ads.plugin)
-</details>
+## 安全要求
 
-## 📋 LOON 规则
+- 禁止在源码、配置、示例、日志或图片元数据中保存真实令牌、密码、Cookie、私钥和个人路径。
+- 所有凭据必须由运行环境或平台 Secret 管理功能注入。
+- 提交前检查暂存区和完整 Git 历史；删除当前文件不能清除旧提交中的秘密。
+- 安全问题与凭据处置流程见 [`SECURITY.md`](SECURITY.md)。
 
-<details>
-<summary>社交媒体</summary>
+## 路径变更
 
-- [TikTok](https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/TikTok/TikTok.list)
-- [Twitter](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Twitter.list)
-- [Telegram](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/YouTube-TG.list)
-</details>
+2026 年 8 月完成目录重构。旧的根目录脚本、`plugin/`、`ohter/` 和 `pic/` 路径已经停止使用，不提供兼容副本；现有订阅或脚本引用需要更新为本 README 中的新地址。
 
-<details>
-<summary>流媒体</summary>
+## 许可与来源
 
-- [Netflix](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Netflix.list)
-- [Netflix 检测](https://raw.githubusercontent.com/PakandAlive/Folder/main/netmedia.sgmodule)
-</details>
-
-<details>
-<summary>支付服务</summary>
-
-- [PayPal](https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/PayPal/PayPal.list)
-</details>
-
-<details>
-<summary>AI 服务</summary>
-
-- [OpenAI-Claude](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/OpenAI-Claude.list)
-</details>
-
-<details>
-<summary>其他规则</summary>
-
-- [Proxy](https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Proxy/Proxy.list)
-- [Talkalone](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/Talkalone.list)
-- [Talkalone Ads](https://raw.githubusercontent.com/PakandAlive/Folder/main/rules/TalkaloneREJECT.list)
-</details>
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
-## 🤝 贡献
-
-欢迎提交 Issues 和 Pull Requests 来帮助改进项目！
+本仓库没有统一许可证。各文件可能来自不同上游项目，版权和许可应以文件头、上游仓库及原作者说明为准。未明确授权的内容不得假定为 MIT 许可。

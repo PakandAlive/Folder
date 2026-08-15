@@ -117,7 +117,7 @@ install_pkgs() {
 }
 install_shortcut() {
   # 脚本 GitHub 地址
-  SCRIPT_URL="https://raw.githubusercontent.com/PakandAlive/Folder/main/3to1.sh"
+  SCRIPT_URL="https://raw.githubusercontent.com/PakandAlive/Folder/main/scripts/server/3to1.sh"
   
   # 检查 $0 是否是有效的脚本文件
   if [ -f "$0" ]; then

@@ -1,7 +1,7 @@
 import json
 import uuid
 import random
-import string
+from pathlib import Path
 
 def generate_hex_64():
     """生成64位十六进制字符串"""
@@ -12,12 +12,12 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 def update_ids():
-    # 配置文件路径
-    file_path = '/Users/liuxiao/Library/Application Support/Cursor/User/globalStorage/storage.json'
+    # 根据当前用户主目录定位配置，避免暴露或绑定本机用户名
+    file_path = Path.home() / 'Library/Application Support/Cursor/User/globalStorage/storage.json'
     
     try:
         # 读取现有文件
-        with open(file_path, 'r') as file:
+        with file_path.open('r', encoding='utf-8') as file:
             data = json.load(file)
         
         # 更新ID值
@@ -26,7 +26,7 @@ def update_ids():
         data['telemetry.devDeviceId'] = generate_uuid()
         
         # 写回文件
-        with open(file_path, 'w') as file:
+        with file_path.open('w', encoding='utf-8') as file:
             json.dump(data, file, indent=2)
             
         print('ID更新成功！')

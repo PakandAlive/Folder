@@ -143,8 +143,8 @@ type=event
 推荐仓库结构：
 
 ```text
-plugin/
-└── surge-modules/
+plugins/
+└── surge/
     └── world-time/
         ├── world-time.sgmodule
         └── world-time.js
@@ -153,13 +153,13 @@ plugin/
 模块安装地址：
 
 ```text
-https://raw.githubusercontent.com/用户名/仓库/main/plugin/surge-modules/world-time/world-time.sgmodule
+https://raw.githubusercontent.com/用户名/仓库/main/plugins/surge/world-time/world-time.sgmodule
 ```
 
 脚本地址：
 
 ```text
-https://raw.githubusercontent.com/用户名/仓库/main/plugin/surge-modules/world-time/world-time.js
+https://raw.githubusercontent.com/用户名/仓库/main/plugins/surge/world-time/world-time.js
 ```
 
 必须使用 `raw.githubusercontent.com` 地址，不能使用 GitHub 的 `/blob/` 或 `/tree/` 网页地址。
@@ -167,7 +167,7 @@ https://raw.githubusercontent.com/用户名/仓库/main/plugin/surge-modules/wor
 模块中的 `script-path` 也应使用完整 Raw URL：
 
 ```ini
-script-path=https://raw.githubusercontent.com/用户名/仓库/main/plugin/surge-modules/world-time/world-time.js
+script-path=https://raw.githubusercontent.com/用户名/仓库/main/plugins/surge/world-time/world-time.js
 ```
 
 不要把包含代理密码、证书、令牌或其他敏感配置的主配置文件上传到公共仓库。
@@ -317,7 +317,7 @@ https://raw.githubusercontent.com/用户名/仓库/提交SHA/文件路径
 世界时间 = script-name=世界时间脚本-v2, update-interval=-1
 
 [Script]
-世界时间脚本-v2 = type=generic, timeout=5, script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugin/surge-modules/world-time/world-time.js?v=2
+世界时间脚本-v2 = type=generic, timeout=5, script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.js?v=2
 ```
 
 ### world-time.js

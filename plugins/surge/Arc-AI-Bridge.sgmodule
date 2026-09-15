@@ -1,13 +1,11 @@
 #!name=Arc AI Bridge
-#!desc=将 Arc Ask on Page 请求安全桥接到自定义 AI 服务
+#!desc=将 Arc Ask on Page 请求安全桥接到自定义 AI 服务，并定向保持两个 LaunchDarkly 功能开关启用
 #!author=PakandAlive
 #!arguments=BRIDGE_TOKEN
 
-[Rule]
-DOMAIN-SUFFIX,launchdarkly.com,REJECT
-
 [Script]
 Arc AI Worker Bridge = type=http-request,pattern=^https:\/\/(?:aiproxy|webresultproxy|ai-service(?:-eval)?|websearch)\.diabrowser\.engineering\/,requires-body=1,max-size=0,timeout=5,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-ai-bridge.js,argument=BRIDGE_TOKEN={{{BRIDGE_TOKEN}}}
+Arc LaunchDarkly Stream Bridge = type=http-request,pattern=^https:\/\/(?:clientstream|clientsdk)\.launchdarkly\.com\/,requires-body=0,max-size=0,timeout=5,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-launchdarkly-bridge.js,argument=BRIDGE_TOKEN={{{BRIDGE_TOKEN}}}
 
 [MITM]
-hostname = %APPEND% aiproxy.diabrowser.engineering,webresultproxy.diabrowser.engineering,ai-service.diabrowser.engineering,ai-service-eval.diabrowser.engineering,websearch.diabrowser.engineering
+hostname = %APPEND% aiproxy.diabrowser.engineering,webresultproxy.diabrowser.engineering,ai-service.diabrowser.engineering,ai-service-eval.diabrowser.engineering,websearch.diabrowser.engineering,clientstream.launchdarkly.com,clientsdk.launchdarkly.com

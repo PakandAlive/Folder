@@ -16,7 +16,7 @@ import sys
 
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07|[\r\x07]")
 DECODER = json.JSONDecoder()
-PREFIX = "[ld-capture]"
+PREFIXES = ("[ld-capture]", "[ai-capture]")
 
 buffer = ""
 
@@ -38,7 +38,7 @@ def emit(obj):
         return
     for entry in logs:
         message = message_text(entry)
-        if message and message.startswith(PREFIX):
+        if message and message.startswith(PREFIXES):
             print(message, flush=True)
 
 

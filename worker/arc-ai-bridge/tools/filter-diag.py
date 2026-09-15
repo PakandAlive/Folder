@@ -45,7 +45,7 @@ def emit(obj):
         print(f"REQ {method} {short_path(request['url'])} -> {status} outcome={obj.get('outcome')}", flush=True)
     for entry in obj.get("logs") or []:
         msg = message_text(entry)
-        if msg and (msg.startswith("[ld-capture]") or msg.startswith("[ld-debug]")):
+        if msg and (msg.startswith("[ld-capture]") or msg.startswith("[ld-debug]") or msg.startswith("[ai-capture]")):
             print(msg, flush=True)
     for exc in obj.get("exceptions") or []:
         name = exc.get("name") if isinstance(exc, dict) else None

@@ -28,6 +28,9 @@ Arc Ask on Page 的 Cloudflare Worker 桥接，以及 LaunchDarkly 客户端流�
 | `STREAM_CHUNK_DELAY_MS` | plain_text | 分片延迟 |
 | `BRIDGE_TOKEN` | secret_text | Surge 与 Worker 之间共享的桥接令牌 |
 | `UPSTREAM_API_KEY` | secret_text | 上游 API Key |
+| `AI_CAPTURE` | plain_text（可选） | 设为 `1` 时在 `/capture` 输出 prompt 结构摘要与 system 消息 |
+| `AI_CAPTURE_USER` | plain_text（可选） | 配合 `AI_CAPTURE` 输出非 system 消息的首尾片段 |
+| `AI_CAPTURE_EDGE_CHARS` | plain_text（可选） | 首尾片段长度，默认 1500 |
 | `LD_CAPTURE` | plain_text（可选） | 设为 `1` 时允许 `?observe=1` 的脱敏采集模式 |
 | `LD_REWRITE` | plain_text（可选） | 设为 `1` 时才启用正式定向改写；未设置时只透传 |
 
@@ -59,6 +62,17 @@ Arc Ask on Page 的 Cloudflare Worker 桥接，以及 LaunchDarkly 客户端流�
 捕获阶段确认前保持 `passthrough`，确认后再设置 `LD_REWRITE=1`。
 
 采集阶段确认后才可部署正式改写。
+
+### Arc AI prompt 采集（临时门控）
+
+`AI_CAPTURE=1` 时，`/capture` 会向 `wrangler tail` 输出 `[ai-capture]` 摘要：
+
+- 请求元数据：`feature`、`isDev`、`model`、`temperature`/`max_tokens`/`stop_sequences`、`tools`
+- 每条消息的 `role`、内容块数量与类型、字符数
+- `system` 消息全文（若存在）
+- `AI_CAPTURE_USER=1` 时额外输出非 system 消息的首尾各 `AI_CAPTURE_EDGE_CHARS`（默认 1500）字符，中间省略
+
+默认全部关闭；用完应设回 `0` 并删除日志。
 
 ## 相关文档
 

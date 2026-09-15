@@ -15,6 +15,82 @@ export const ALLOWED_TARGETS = new Set([
 
 export class BridgeError extends Error {}
 
+// 临时门控：AI_CAPTURE=1 时输出 prompt 结构摘要与 system prompt 全文，
+// 不记录 user/assistant 正文（其中含网页内容与用户提问）。
+const AI_CAPTURE_PREFIX = "[ai-capture]";
+const AI_CAPTURE_MAX_SYSTEM_CHARS = 8000;
+const AI_CAPTURE_EDGE_CHARS = 1500;
+
+export function summarizeArcPrompt(arcPayload, options = {}) {
+  const includeUserContent = Boolean(options.includeUserContent);
+  const edgeChars = Number.isInteger(options.edgeChars) && options.edgeChars > 0 ? options.edgeChars : AI_CAPTURE_EDGE_CHARS;
+  const summary = {
+    payloadKeys: null,
+    feature: null,
+    isDev: null,
+    model: null,
+    sampling: {},
+    tools: null,
+    messages: [],
+    systemChars: 0,
+    system: null,
+  };
+  if (!arcPayload || typeof arcPayload !== "object" || Array.isArray(arcPayload)) return summary;
+
+  summary.payloadKeys = Object.keys(arcPayload).sort();
+  for (const key of ["feature", "isDev", "model"]) {
+    if (arcPayload[key] !== undefined) summary[key] = arcPayload[key];
+  }
+  for (const key of ["temperature", "top_p", "max_tokens", "stop_sequences"]) {
+    if (arcPayload[key] !== undefined) summary.sampling[key] = arcPayload[key];
+  }
+  if (arcPayload.tools !== undefined) {
+    summary.tools = Array.isArray(arcPayload.tools) ? arcPayload.tools.length : "non-array";
+  }
+
+  const prompt = Array.isArray(arcPayload.prompt) ? arcPayload.prompt : [];
+  for (const message of prompt) {
+    const blocks = Array.isArray(message?.content) ? message.content : [];
+    const text = blocks.map((block) => (typeof block?.text === "string" ? block.text : "")).join("");
+    const entry = {
+      role: message?.role ?? null,
+      blocks: blocks.length,
+      blockTypes: [...new Set(blocks.map((block) => block?.type ?? null))],
+      chars: text.length,
+    };
+    // 仅在显式开启时输出非 system 消息的首尾片段（中间省略），避免整体落盘页面正文。
+    if (includeUserContent && entry.role !== "system" && text.length > 0) {
+      if (text.length <= edgeChars * 2) {
+        entry.head = text;
+        entry.tail = "";
+        entry.omitted = 0;
+      } else {
+        entry.head = text.slice(0, edgeChars);
+        entry.tail = text.slice(-edgeChars);
+        entry.omitted = text.length - entry.head.length - entry.tail.length;
+      }
+    }
+    summary.messages.push(entry);
+  }
+
+  const system = prompt
+    .filter((message) => message?.role === "system")
+    .map((message) =>
+      (Array.isArray(message.content) ? message.content : [])
+        .map((block) => (typeof block?.text === "string" ? block.text : ""))
+        .join(""),
+    )
+    .join("\n\n=== system message boundary ===\n\n");
+  if (system.length > 0) {
+    summary.systemChars = system.length;
+    summary.system =
+      system.length > AI_CAPTURE_MAX_SYSTEM_CHARS
+        ? `${system.slice(0, AI_CAPTURE_MAX_SYSTEM_CHARS)}...<truncated>`
+        : system;
+  }
+  return summary;
+}
+
 export async function upstreamErrorResponse(upstream) {
   const contentType = upstream.headers.get("content-type") || "";
   const body = await upstream.text();
@@ -245,6 +321,21 @@ export async function handleCapture(request, env, url) {
     arcPayload = await request.json();
   } catch {
     return jsonResponse(400, "Arc 请求正文不是有效 JSON");
+  }
+  if (env.AI_CAPTURE === "1") {
+    // 临时诊断：只输出结构摘要与 system prompt，不输出 user/assistant 正文。
+    try {
+      console.log(
+        `${AI_CAPTURE_PREFIX} ${JSON.stringify(
+          summarizeArcPrompt(arcPayload, {
+            includeUserContent: env.AI_CAPTURE_USER === "1",
+            edgeChars: env.AI_CAPTURE_EDGE_CHARS ? Number(env.AI_CAPTURE_EDGE_CHARS) : undefined,
+          }),
+        )}`,
+      );
+    } catch {
+      // 诊断日志失败不得影响正常转发。
+    }
   }
   let upstreamPayload;
   try {

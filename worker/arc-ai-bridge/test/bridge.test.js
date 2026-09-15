@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import worker, { buildOpenAIPayload, createAnthropicStream } from "../src/index.js";
-import { handleCapture } from "../src/bridge.js";
+import { handleCapture, summarizeArcPrompt } from "../src/bridge.js";
 
 const env = {
   BRIDGE_TOKEN: "s3cret",
@@ -191,4 +191,61 @@ test("createAnthropicStream 校验分片参数", () => {
   const body = new ReadableStream({ start(controller) { controller.close(); } });
   assert.throws(() => createAnthropicStream(body, { chunkCharacters: "0", chunkDelayMs: "0" }), /正整数/);
   assert.throws(() => createAnthropicStream(body, { chunkCharacters: "10", chunkDelayMs: "-1" }), /非负整数/);
+});
+
+test("AI 采集摘要包含 system prompt 与结构，且不含 user 正文", () => {
+  const summary = summarizeArcPrompt({
+    temperature: 0.7,
+    max_tokens: 1024,
+    stop_sequences: ["</answer>"],
+    tools: [],
+    prompt: [
+      { role: "system", content: [{ type: "text", text: "你是受限助手，禁止讨论 X" }] },
+      { role: "user", content: [{ type: "text", text: "这是用户的私人网页正文 SECRET" }] },
+      { role: "assistant", content: [{ type: "text", text: "好的" }] },
+    ],
+  });
+  assert.deepEqual(summary.messages, [
+    { role: "system", blocks: 1, blockTypes: ["text"], chars: 13 },
+    { role: "user", blocks: 1, blockTypes: ["text"], chars: 18 },
+    { role: "assistant", blocks: 1, blockTypes: ["text"], chars: 2 },
+  ]);
+  assert.match(summary.system, /禁止讨论 X/);
+  assert.equal(summary.sampling.temperature, 0.7);
+  assert.equal(summary.sampling.max_tokens, 1024);
+  assert.deepEqual(summary.sampling.stop_sequences, ["</answer>"]);
+  assert.equal(summary.tools, 0);
+  const serialized = JSON.stringify(summary);
+  assert.equal(serialized.includes("SECRET"), false);
+  assert.equal(serialized.includes("网页正文"), false);
+});
+
+test("AI 采集首尾模式只给非 system 消息加 head/tail", () => {
+  const long = "A".repeat(5000);
+  const summary = summarizeArcPrompt(
+    {
+      feature: "ask-on-page",
+      isDev: false,
+      model: "claude-3-5-sonnet",
+      prompt: [
+        { role: "system", content: [{ type: "text", text: "系统限制" }] },
+        { role: "user", content: [{ type: "text", text: long }] },
+      ],
+    },
+    { includeUserContent: true },
+  );
+  assert.equal(summary.feature, "ask-on-page");
+  assert.equal(summary.isDev, false);
+  assert.equal(summary.model, "claude-3-5-sonnet");
+  const [system, user] = summary.messages;
+  assert.equal(system.head, undefined);
+  assert.equal(user.head.length, 1500);
+  assert.equal(user.tail.length, 1500);
+  assert.equal(user.omitted, 5000 - 3000);
+});
+
+test("AI 采集摘要对非对象输入安全返回", () => {
+  const summary = summarizeArcPrompt("not-an-object");
+  assert.equal(summary.system, null);
+  assert.deepEqual(summary.messages, []);
 });

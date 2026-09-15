@@ -6,8 +6,8 @@
   "keep_vars": true,
   "vars": {
     "AI_CAPTURE": "0",
-    "AI_CAPTURE_EDGE_CHARS": "1500",
     "AI_CAPTURE_USER": "0",
+    "ASK_STRIP_CONCISE": "1",
     "LD_CAPTURE": "0",
     "LD_REWRITE": "1"
   },

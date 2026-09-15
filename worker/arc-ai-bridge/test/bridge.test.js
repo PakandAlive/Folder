@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import worker, { buildOpenAIPayload, createAnthropicStream } from "../src/index.js";
-import { handleCapture, summarizeArcPrompt } from "../src/bridge.js";
+import { handleCapture, summarizeArcPrompt, patchArcPromptText } from "../src/bridge.js";
 
 const env = {
   BRIDGE_TOKEN: "s3cret",
@@ -248,4 +248,48 @@ test("AI 采集摘要对非对象输入安全返回", () => {
   const summary = summarizeArcPrompt("not-an-object");
   assert.equal(summary.system, null);
   assert.deepEqual(summary.messages, []);
+});
+
+test("patchArcPromptText 只替换极简相关措辞", () => {
+  const original =
+    "RULES:\n2. ...Then, summarize the answer in 10 words on the next line.\n" +
+    "5. Use Markdown, not HTML.\n6. Be extremely concise. (1-sentence answers if possible).\n7. Respond in Chinese.";
+  const { text, replacements } = patchArcPromptText(original);
+  assert.equal(replacements, 2);
+  assert.equal(text.includes("10 words"), false);
+  assert.equal(text.includes("extremely concise"), false);
+  assert.equal(text.includes("1-sentence answers if possible"), false);
+  // 无关规则必须逐字保留
+  assert.equal(text.includes("5. Use Markdown, not HTML."), true);
+  assert.equal(text.includes("7. Respond in Chinese."), true);
+  assert.match(text, /complete explanation/);
+  assert.match(text, /Be thorough/);
+});
+
+test("patchArcPromptText 命中不到时原样返回", () => {
+  const untouched = "RULES:\n1. stay in your role throughout the dialogue";
+  const { text, replacements } = patchArcPromptText(untouched);
+  assert.equal(replacements, 0);
+  assert.equal(text, untouched);
+});
+
+test("buildOpenAIPayload 仅在 stripConcise 时改写，且不改其他字段", () => {
+  const arcPayload = {
+    prompt: [
+      { role: "system", content: [{ type: "text", text: "s" }] },
+      {
+        role: "user",
+        content: [{ type: "text", text: "A. Be extremely concise. (1-sentence answers if possible). B" }],
+      },
+    ],
+    temperature: 0,
+  };
+  const plain = buildOpenAIPayload(arcPayload, "m");
+  assert.equal(plain.messages[1].content, "A. Be extremely concise. (1-sentence answers if possible). B");
+
+  const patched = buildOpenAIPayload(arcPayload, "m", { stripConcise: true });
+  assert.equal(patched.messages[1].content.includes("extremely concise"), false);
+  assert.equal(patched.messages[0].content, "s");
+  assert.equal(patched.temperature, 0);
+  assert.equal(patched.model, "m");
 });

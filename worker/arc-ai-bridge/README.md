@@ -28,6 +28,7 @@ Arc Ask on Page 的 Cloudflare Worker 桥接，以及 LaunchDarkly 客户端流�
 | `STREAM_CHUNK_DELAY_MS` | plain_text | 分片延迟 |
 | `BRIDGE_TOKEN` | secret_text | Surge 与 Worker 之间共享的桥接令牌 |
 | `UPSTREAM_API_KEY` | secret_text | 上游 API Key |
+| `ASK_STRIP_CONCISE` | plain_text（可选） | 设为 `1` 时去掉 Arc Ask on Page 模板里的「极简」要求 |
 | `AI_CAPTURE` | plain_text（可选） | 设为 `1` 时在 `/capture` 输出 prompt 结构摘要与 system 消息 |
 | `AI_CAPTURE_USER` | plain_text（可选） | 配合 `AI_CAPTURE` 输出非 system 消息的首尾片段 |
 | `AI_CAPTURE_EDGE_CHARS` | plain_text（可选） | 首尾片段长度，默认 1500 |
@@ -62,6 +63,20 @@ Arc Ask on Page 的 Cloudflare Worker 桥接，以及 LaunchDarkly 客户端流�
 捕获阶段确认前保持 `passthrough`，确认后再设置 `LD_REWRITE=1`。
 
 采集阶段确认后才可部署正式改写。
+
+### Ask on Page 指令改写
+
+`ASK_STRIP_CONCISE=1` 时，`/capture` 会先改写 Arc 模板里与「极简」相关的两处措辞：
+
+```text
+Then, summarize the answer in 10 words on the next line.
+  -> Then, give a complete explanation in your own words, with as much detail as the question needs.
+
+Be extremely concise. (1-sentence answers if possible).
+  -> Be thorough. Give the question the detail it deserves instead of the shortest possible answer.
+```
+
+其余模板内容（引用格式、加粗关键词、中文回复、示例）逐字保留；匹配不到时原样透传。
 
 ### Arc AI prompt 采集（临时门控）
 

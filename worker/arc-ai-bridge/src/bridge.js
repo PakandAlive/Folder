@@ -15,6 +15,36 @@ export const ALLOWED_TARGETS = new Set([
 
 export class BridgeError extends Error {}
 
+// Arc Ask on Page 模板里与「极简」相关的措辞（捕获自 Arc 客户端请求体，见 CAPTURE 阶段记录）。
+// 仅在 ASK_STRIP_CONCISE=1 时应用；匹配不到就原样保留，不做任何猜测性改写。
+const ASK_CONCISE_RULES = [
+  {
+    pattern: /Then,\s+summarize the answer in 10 words on the next line\./g,
+    replacement:
+      "Then, give a complete explanation in your own words, with as much detail as the question needs.",
+  },
+  {
+    pattern: /Be extremely concise\.\s*\(1-sentence answers if possible\)\./g,
+    replacement: "Be thorough. Give the question the detail it deserves instead of the shortest possible answer.",
+  },
+];
+
+export function patchArcPromptText(text) {
+  let out = text;
+  let replacements = 0;
+  for (const rule of ASK_CONCISE_RULES) {
+    out = out.replace(rule.pattern, () => {
+      replacements += 1;
+      return rule.replacement;
+    });
+  }
+  return { text: out, replacements };
+}
+
+export function countAskConciseRules(text) {
+  return patchArcPromptText(text).replacements;
+}
+
 // 临时门控：AI_CAPTURE=1 时输出 prompt 结构摘要与 system prompt 全文，
 // 不记录 user/assistant 正文（其中含网页内容与用户提问）。
 const AI_CAPTURE_PREFIX = "[ai-capture]";
@@ -143,7 +173,8 @@ function textContent(content) {
     .join("");
 }
 
-export function buildOpenAIPayload(arcPayload, model) {
+export function buildOpenAIPayload(arcPayload, model, options = {}) {
+  const stripConcise = options.stripConcise === true;
   if (!arcPayload || typeof arcPayload !== "object" || Array.isArray(arcPayload)) {
     throw new BridgeError("Arc 请求正文必须是 JSON 对象");
   }
@@ -163,7 +194,11 @@ export function buildOpenAIPayload(arcPayload, model) {
     if (!["system", "user", "assistant"].includes(message.role)) {
       throw new BridgeError(`当前不支持消息角色：${message.role}`);
     }
-    return { role: message.role, content: textContent(message.content) };
+    const text = textContent(message.content);
+    return {
+      role: message.role,
+      content: stripConcise ? patchArcPromptText(text).text : text,
+    };
   });
   const result = { model, messages, stream: true, stream_options: { include_usage: true } };
   for (const key of ["temperature", "top_p", "max_tokens"]) {
@@ -333,13 +368,24 @@ export async function handleCapture(request, env, url) {
           }),
         )}`,
       );
+      if (env.ASK_STRIP_CONCISE === "1") {
+        let replacements = 0;
+        for (const message of Array.isArray(arcPayload?.prompt) ? arcPayload.prompt : []) {
+          for (const block of Array.isArray(message?.content) ? message.content : []) {
+            if (typeof block?.text === "string") replacements += countAskConciseRules(block.text);
+          }
+        }
+        console.log(`${AI_CAPTURE_PREFIX} {"patch":"strip-concise","replacements":${replacements}}`);
+      }
     } catch {
       // 诊断日志失败不得影响正常转发。
     }
   }
   let upstreamPayload;
   try {
-    upstreamPayload = buildOpenAIPayload(arcPayload, env.MODEL);
+    upstreamPayload = buildOpenAIPayload(arcPayload, env.MODEL, {
+      stripConcise: env.ASK_STRIP_CONCISE === "1",
+    });
   } catch (error) {
     return jsonResponse(422, error.message);
   }

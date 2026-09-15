@@ -14,7 +14,9 @@
 ├── scripts/security/       仅限授权目标的安全检查脚本
 ├── scripts/server/         VPS 和服务器管理脚本
 ├── scripts/utilities/      本地实用工具
-└── services/api-proxies/   API 代理服务源码
+├── services/api-proxies/   API 代理服务源码
+├── tests/                  脚本测试
+└── worker/                 Cloudflare Worker 源码与测试
 ```
 
 ## 服务器脚本
@@ -44,12 +46,29 @@ bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scri
 
 ## Surge 模块
 
-- Arc Ask on Page AI 桥接：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/Arc-AI-Bridge.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-ai-bridge.js)
+- Arc Ask on Page AI 桥接 + LaunchDarkly 开关定向改写：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/Arc-AI-Bridge.sgmodule) | [AI 桥接脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-ai-bridge.js) | [LaunchDarkly 脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-launchdarkly-bridge.js)
 - IP 信息查询：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.js)
 - 流媒体解锁检测：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.js)
 - 世界时间：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.js) | [开发指南](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/Surge%E6%A8%A1%E5%9D%97%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
 
 世界时间模块的开发说明位于 [`plugins/surge/world-time/Surge模块开发指南.md`](plugins/surge/world-time/Surge模块开发指南.md)。
+
+### Arc Ask on Page + LaunchDarkly 开关定向改写
+
+在 Surge 中安装以下模块，安装时把 `BRIDGE_TOKEN` 填为与 Worker 一致的桥接令牌：
+
+```text
+https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/Arc-AI-Bridge.sgmodule
+```
+
+模块包含两条请求脚本：
+
+1. `arc-ai-bridge.js`：把 Arc 的 Ask on Page 请求桥接到自定义 OpenAI 兼容 API，并转换为 Arc 需要的 Anthropic SSE。
+2. `arc-launchdarkly-bridge.js`：把 Arc 的 LaunchDarkly 客户端流转发到 Cloudflare Worker，由 Worker 仅强制 `ask-in-page-enabled` 与 `arc-ai-search-enabled` 为 `value=true, variation=0`，其他开关与事件原样透传。
+
+注意：主配置中不应再保留 `DOMAIN-SUFFIX,launchdarkly.com,REJECT`，否则请求会在进入脚本前被拒绝。
+
+Worker 源码、自动化测试与 LaunchDarkly 协议捕获报告位于 [`worker/arc-ai-bridge/`](worker/arc-ai-bridge/)。
 
 ## 分流规则
 

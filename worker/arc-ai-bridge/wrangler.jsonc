@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "arc-ai-bridge",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-15",
+  "keep_vars": true,
+  "vars": {
+    "LD_CAPTURE": "0",
+    "LD_REWRITE": "1"
+  },
+  "observability": {
+    "enabled": false
+  }
+}

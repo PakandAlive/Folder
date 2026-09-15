@@ -5,10 +5,16 @@
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 *.pem
 *.key
 *.p12
 *.pfx
+
+# Node / Worker 依赖与本地状态
+node_modules/
+.wrangler/
 
 # Python 缓存与本地输入输出
 __pycache__/

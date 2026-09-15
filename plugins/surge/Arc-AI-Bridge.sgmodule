@@ -1,7 +1,7 @@
 #!name=Arc AI Bridge
 #!desc=将 Arc Ask on Page 请求安全桥接到自定义 AI 服务
 #!author=PakandAlive
-#!arguments=BRIDGE_TOKEN:
+#!arguments=BRIDGE_TOKEN
 
 [Rule]
 DOMAIN-SUFFIX,launchdarkly.com,REJECT

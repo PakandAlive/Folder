@@ -44,6 +44,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/PakandAlive/Folder/main/scri
 
 ## Surge 模块
 
+- Arc Ask on Page AI 桥接：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/Arc-AI-Bridge.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/arc-ai-bridge.js)
 - IP 信息查询：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/ipinfo/ipinfo.js)
 - 流媒体解锁检测：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/netmedia/netmedia.js)
 - 世界时间：[模块](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.sgmodule) | [脚本](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/world-time.js) | [开发指南](https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/world-time/Surge%E6%A8%A1%E5%9D%97%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)

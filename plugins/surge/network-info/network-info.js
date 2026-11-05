@@ -331,10 +331,10 @@ async function getDirectRequestInfo({ PROXIES = [] } = {}) {
   return { CN_IP, CN_INFO, CN_POLICY: POLICY }
 }
 async function getProxyRequestInfo({ PROXIES = [] } = {}) {
-  const { PROXY_IP, PROXY_INFO, PROXY_PRIVACY } = await getProxyInfo(undefined, $.lodash_get(arg, 'LANDING_IPv4'))
+  const { PROXY_IP, PROXY_INFO, PROXY_PRIVACY } = await getProxyInfo(undefined, $.lodash_get(arg, 'LANDING_IPv4') || 'ippure')
   let result
   if ($.isSurge() || $.isStash()) {
-    result = await getRequestInfo(/ipinfo\.io|ipwho\.is|api\.ipapi\.is|ip-api\.com|api-ipv4\.ip\.sb/, PROXIES)
+    result = await getRequestInfo(/my\.ippure\.com|ipinfo\.io|ipwho\.is|api\.ipapi\.is|ip-api\.com|api-ipv4\.ip\.sb/, PROXIES)
   } else if ($.isQuanX() || $.isLoon()) {
     result = await getEntranceInfo()
   }
@@ -868,7 +868,60 @@ async function getDirectInfoIPv6() {
   }
   return { CN_IPv6 }
 }
+// IPPure reports the caller's egress only; never use it to look up a supplied entrance IP.
+function formatIPPureTraits(body = {}) {
+  const score = body['fraud' + 'Score'] ?? body.risk_score
+  const validScore = typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100
+  const booleanText = value => (value === true ? '是' : value === false ? '否' : '未知')
+  return [
+    $.lodash_get(arg, 'RISK_SCORE', 1) == 1
+      ? `风险分数: ${validScore ? `${score}/100（越低越纯净）` : '未知'}` : '',
+    $.lodash_get(arg, 'RESIDENTIAL', 1) == 1 ? `住宅 IP: ${booleanText(body.isResidential)}` : '',
+    $.lodash_get(arg, 'BROADCAST', 1) == 1 ? `广播 IP: ${booleanText(body.isBroadcast)}` : '',
+  ].filter(Boolean).join('\n')
+}
+
+async function getIPPureInfo() {
+  const res = await http({
+    ...getNodeOpt(),
+    url: 'https://my.ippure.com/v1/info',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      Origin: 'https://ippure.com',
+      Referer: 'https://ippure.com/',
+      Accept: 'application/json',
+    },
+  })
+  if (!res || Number(res.status ?? res.statusCode) !== 200) {
+    throw new Error(`IPPure HTTP ${res?.status ?? res?.statusCode ?? '请求失败'}`)
+  }
+  const body = JSON.parse(String(res.body))
+  if (!body || !isIP(body.ip)) throw new Error('IPPure 未返回有效出口 IP')
+  const info = [
+    ['位置:', getflag(body.countryCode), body.country, body.region, body.city].filter(Boolean).join(' '),
+    `运营商: ${body.asOrganization || '-'}`,
+    $.lodash_get(arg, 'ORG') == 1 ? `组织: ${body.asOrganization || '-'}` : '',
+    $.lodash_get(arg, 'ASN') == 1 ? `ASN: ${body.asn ?? '-'}` : '',
+  ].filter(Boolean).join('\n')
+  return {
+    PROXY_IP: body.ip,
+    PROXY_INFO: simplifyAddr(info),
+    PROXY_PRIVACY: formatIPPureTraits(body) ? `\n${formatIPPureTraits(body)}` : '',
+  }
+}
+
 async function getProxyInfo(ip, provider) {
+  if (provider === 'ippure') {
+    if (ip) return await getProxyInfo(ip, 'ipapi')
+    try {
+      return await getIPPureInfo()
+    } catch (e) {
+      $.logErr(`IPPure 查询失败，使用备用出口接口: ${e.message || e}`)
+      const fallback = await getProxyInfo(undefined, 'ipapi')
+      const traits = formatIPPureTraits()
+      return { ...fallback, PROXY_PRIVACY: traits ? `\n${traits}` : '' }
+    }
+  }
   let PROXY_IP
   let PROXY_INFO
   let PROXY_PRIVACY

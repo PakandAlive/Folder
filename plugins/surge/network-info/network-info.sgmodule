@@ -1,13 +1,15 @@
 #!name=网络信息
-#!desc=国内出口、代理入口和落地 IP 信息；基于 xream/scripts，本仓库维护迭代。
+#!desc=国内出口、代理入口及 IPPure 落地信息，显示风险分数、住宅 IP 和广播 IP。
 #!system=mac
+#!arguments=RISK_SCORE:1,RESIDENTIAL:1,BROADCAST:1
+#!arguments-desc=三项参数分别控制风险分数、住宅 IP、广播 IP 的显示：1 显示，0 隐藏。
 
 # Upstream: https://raw.githubusercontent.com/xream/scripts/main/surge/modules/network-info/net-lsp-x.js
 # Baseline: upstream.original.js (2026-11-06, copied from the active Surge cache).
 [Script]
-网络信息请求 = type=http-request,pattern=^https?:\/\/net-lsp-x\.com,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,timeout=120
-网络信息事件 = type=event,event-name=network-changed,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,argument=TYPE=EVENT&FLAG=0
-网络信息面板 = type=generic,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,argument=FLAG=0
+网络信息请求 = type=http-request,pattern=^https?:\/\/net-lsp-x\.com,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,timeout=120,argument=FLAG=0&RISK_SCORE={{{RISK_SCORE}}}&RESIDENTIAL={{{RESIDENTIAL}}}&BROADCAST={{{BROADCAST}}}
+网络信息事件 = type=event,event-name=network-changed,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,argument=TYPE=EVENT&FLAG=0&RISK_SCORE={{{RISK_SCORE}}}&RESIDENTIAL={{{RESIDENTIAL}}}&BROADCAST={{{BROADCAST}}}
+网络信息面板 = type=generic,timeout=120,script-path=https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-info/network-info.js,argument=FLAG=0&RISK_SCORE={{{RISK_SCORE}}}&RESIDENTIAL={{{RESIDENTIAL}}}&BROADCAST={{{BROADCAST}}}
 
 [Panel]
 网络信息 = script-name=网络信息面板,update-interval=300

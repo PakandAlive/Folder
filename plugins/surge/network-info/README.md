@@ -14,6 +14,20 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-
 
 若之前已安装本地网络信息模块或在主配置中定义了同名脚本和面板，应停用或移除旧定义，避免重复执行。模块无需启用 MITM 即可显示面板；HTTPS 请求入口需另外配置 MITM。
 
+## IPPure 与显示参数
+
+代理出口默认使用 `https://my.ippure.com/v1/info`，附带浏览器 UA、`Origin: https://ippure.com`、`Referer: https://ippure.com/` 和 JSON Accept，无需签名。国内出口仍使用原查询接口；入口地址的查询仍使用支持指定 IP 的接口，避免把调用者出口误认为入口。
+
+模块参数均默认开启，可在 Surge 模块参数中设为 `0` 隐藏：
+
+| 参数 | 显示内容 | 数据来源 |
+|---|---|---|
+| `RISK_SCORE` | 风险分数，0–100，越低越纯净 | IPPure 返回的风险分数字段 |
+| `RESIDENTIAL` | 住宅 IP：是/否/未知 | `isResidential` |
+| `BROADCAST` | 广播 IP：是/否/未知 | `isBroadcast` |
+
+缺失或无效的字段显示“未知”；0 分和 false 均正常显示。IPPure 查询失败时使用原 ip-api 接口获取出口信息，三项属性显示“未知”，不推测风险分数。显式设置其他 `LANDING_IPv4` 数据源时沿用该数据源原有行为。原持久化参数仍可能覆盖模块参数。
+
 ## 迭代
 
 - `network-info.js`：实际执行的脚本，在这里修改功能。

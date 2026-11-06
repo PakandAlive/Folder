@@ -870,7 +870,7 @@ async function getDirectInfoIPv6() {
 }
 // IPPure reports the caller's egress only; never use it to look up a supplied entrance IP.
 function formatIPPureTraits(body = {}) {
-  const score = body['fraud' + 'Score'] ?? body.risk_score
+  const score = body.risk_score
   const validScore = typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100
   const booleanText = value => (value === true ? '是' : value === false ? '否' : '未知')
   return [
@@ -879,6 +879,65 @@ function formatIPPureTraits(body = {}) {
     $.lodash_get(arg, 'RESIDENTIAL', 1) == 1 ? `住宅 IP: ${booleanText(body.isResidential)}` : '',
     $.lodash_get(arg, 'BROADCAST', 1) == 1 ? `广播 IP: ${booleanText(body.isBroadcast)}` : '',
   ].filter(Boolean).join('\n')
+}
+
+// Pure JavaScript HMAC-SHA256 for Surge's JavaScriptCore (no Node/WebCrypto dependency).
+function ippureSHA256(input) {
+  const k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]
+  const bytes = input.slice(), bitLength = bytes.length * 8
+  bytes.push(0x80)
+  while (bytes.length % 64 !== 56) bytes.push(0)
+  const high = Math.floor(bitLength / 0x100000000), low = bitLength >>> 0
+  for (const word of [high, low]) for (let shift = 24; shift >= 0; shift -= 8) bytes.push((word >>> shift) & 255)
+  const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]
+  const rotr = (x,n) => (x >>> n) | (x << (32-n))
+  for (let offset = 0; offset < bytes.length; offset += 64) {
+    const w = []
+    for (let i = 0; i < 16; i++) { const j = offset + i*4; w[i] = (bytes[j]<<24)|(bytes[j+1]<<16)|(bytes[j+2]<<8)|bytes[j+3] }
+    for (let i = 16; i < 64; i++) {
+      const x=w[i-15], y=w[i-2]
+      w[i] = (w[i-16] + (rotr(x,7)^rotr(x,18)^(x>>>3)) + w[i-7] + (rotr(y,17)^rotr(y,19)^(y>>>10))) | 0
+    }
+    let [a,b,c,d,e,f,g,j] = h
+    for (let i = 0; i < 64; i++) {
+      const t1 = (j + (rotr(e,6)^rotr(e,11)^rotr(e,25)) + ((e&f)^(~e&g)) + k[i] + w[i]) | 0
+      const t2 = ((rotr(a,2)^rotr(a,13)^rotr(a,22)) + ((a&b)^(a&c)^(b&c))) | 0
+      j=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0
+    }
+    ;[a,b,c,d,e,f,g,j].forEach((v,i) => { h[i]=(h[i]+v)|0 })
+  }
+  return h.flatMap(word => [24,16,8,0].map(shift => (word>>>shift)&255))
+}
+function ippureHMAC(key, message) {
+  const utf8 = text => Array.from(unescape(encodeURIComponent(text)), c => c.charCodeAt(0))
+  let bytes = utf8(key)
+  if (bytes.length > 64) bytes = ippureSHA256(bytes)
+  while (bytes.length < 64) bytes.push(0)
+  return ippureSHA256(bytes.map(v=>v^0x5c).concat(ippureSHA256(bytes.map(v=>v^0x36).concat(utf8(message)))))
+    .map(v=>v.toString(16).padStart(2,'0')).join('')
+}
+
+async function getIPPureRisk(ip) {
+  if (!isIP(ip)) throw new Error('IPPure 风险查询目标 IP 无效')
+  const url = `https://api.123169.xyz/api/info/ip-risk/${ip}`
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    Origin: 'https://ippure.com', Referer: 'https://ippure.com/', Accept: 'application/json',
+  }
+  const handshake = await http({ url, headers })
+  if (!handshake || Number(handshake.status ?? handshake.statusCode) !== 200) throw new Error('IPPure 风险握手失败')
+  const responseHeaders = Object.fromEntries(Object.entries(handshake.headers || {}).map(([k,v])=>[k.toLowerCase(),v]))
+  const key=responseHeaders['x-k'], timestamp=responseHeaders['x-t']
+  if (typeof key !== 'string' || !key || !/^\d+$/.test(String(timestamp || ''))) throw new Error('IPPure 风险握手缺少密钥或时间戳')
+  const signature = ippureHMAC(key, `GET-${url}--${timestamp}`)
+  const res = await http({ url, headers: { ...headers, 'x-k': key, 'x-t': `${timestamp}-${signature}` } })
+  if (!res || Number(res.status ?? res.statusCode) !== 200) throw new Error('IPPure 风险查询失败')
+  const body = JSON.parse(String(res.body))
+  const score = body?.data?.risk_score
+  if (body?.ok !== true || typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 100) {
+    throw new Error('IPPure 未返回有效 data.risk_score')
+  }
+  return score
 }
 
 async function getIPPureInfo() {
@@ -897,6 +956,16 @@ async function getIPPureInfo() {
   }
   const body = JSON.parse(String(res.body))
   if (!body || !isIP(body.ip)) throw new Error('IPPure 未返回有效出口 IP')
+  // The caller endpoint's fraud score differs from the website's target-IP score.
+  // Keep the egress snapshot and fetch the website score for that exact IP.
+  if ($.lodash_get(arg, 'RISK_SCORE', 1) == 1) {
+    try {
+      body.risk_score = await getIPPureRisk(body.ip)
+    } catch (e) {
+      delete body.risk_score
+      $.logErr(`IPPure 按 IP 查询风险失败: ${e.message || e}`)
+    }
+  }
   const info = [
     ['位置:', getflag(body.countryCode), body.country, body.region, body.city].filter(Boolean).join(' '),
     `运营商: ${body.asOrganization || '-'}`,

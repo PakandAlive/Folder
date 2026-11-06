@@ -22,9 +22,11 @@ https://raw.githubusercontent.com/PakandAlive/Folder/main/plugins/surge/network-
 
 | 参数 | 显示内容 | 数据来源 |
 |---|---|---|
-| `RISK_SCORE` | 风险分数，0–100，越低越纯净 | IPPure 返回的风险分数字段 |
+| `RISK_SCORE` | 风险分数，0–100，越低越纯净 | 签名接口 `api.123169.xyz/api/info/ip-risk/<落地IP>` 的 `data.risk_score` |
 | `RESIDENTIAL` | 住宅 IP：是/否/未知 | `isResidential` |
 | `BROADCAST` | 广播 IP：是/否/未知 | `isBroadcast` |
+
+风险分数先取出口接口返回的实际 IP，再对该 IP 调用网页使用的风险接口：首次请求读取响应头 `x-k`/`x-t`，对 `GET-<完整URL>--<时间戳>` 做 HMAC-SHA256，第二次请求携带签名。只使用 `data.risk_score`，不使用出口接口的另一个评分。风险请求失败时保留出口信息，分数显示“未知”；`RISK_SCORE=0` 时跳过风险查询。
 
 缺失或无效的字段显示“未知”；0 分和 false 均正常显示。IPPure 查询失败时使用原 ip-api 接口获取出口信息，三项属性显示“未知”，不推测风险分数。显式设置其他 `LANDING_IPv4` 数据源时沿用该数据源原有行为。原持久化参数仍可能覆盖模块参数。
 
